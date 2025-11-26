@@ -5,7 +5,7 @@ void main() {
 }
 
 class LumeApp extends StatelessWidget {
-  const LumeApp({Key? key}) : super(key: key);
+  const LumeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class LumeApp extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -146,7 +146,7 @@ class _MainScreenState extends State<MainScreen> {
 
 // Landing Page
 class LandingPage extends StatelessWidget {
-  const LandingPage({Key? key}) : super(key: key);
+  const LandingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -859,7 +859,7 @@ class LandingPage extends StatelessWidget {
 
 // Placeholder pages
 class ProductsPage extends StatelessWidget {
-  const ProductsPage({Key? key}) : super(key: key);
+  const ProductsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -873,7 +873,7 @@ class ProductsPage extends StatelessWidget {
 }
 
 class ClassesPage extends StatelessWidget {
-  const ClassesPage({Key? key}) : super(key: key);
+  const ClassesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -887,7 +887,7 @@ class ClassesPage extends StatelessWidget {
 }
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {

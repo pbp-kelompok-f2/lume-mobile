@@ -203,9 +203,8 @@ class _CartPageState extends State<CartPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              (result['message']?.toString() ??
-                      "Checkout request sent successfully.") +
-                  " (Check server behavior)",
+              "${result['message']?.toString() ??
+                      "Checkout request sent successfully."} (Check server behavior)",
             ),
           ),
         );
