@@ -4,11 +4,11 @@ import 'package:lume_mobile/main/screens/main_scaffold.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const LumeApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class LumeApp extends StatelessWidget {
+  const LumeApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
