@@ -8,7 +8,7 @@ import 'package:lume_mobile/main.dart';
 void main() {
   testWidgets('Home page loads correctly', (WidgetTester tester) async {
     // 1. Build aplikasi Lume
-    await tester.pumpWidget(const LumeApp());
+    await tester.pumpWidget(const MyApp());
     
     // Tunggu semua animasi/gambar loading selesai (opsional, kadang perlu pumpAndSettle)
     await tester.pump(); 

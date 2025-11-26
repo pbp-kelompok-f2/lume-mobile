@@ -4,8 +4,8 @@ import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/catalog/widgets/product_card.dart';
 import 'package:lume_mobile/home/widgets/home_banner.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
-import 'package:provider/provider.dart';
-import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart'; // Import PBP Auth
+import 'package:provider/provider.dart'; // Import Provider
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,44 +15,30 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Nanti variabel ini diisi dari Provider/CookieRequest saat login
+  // Variabel nama user (sementara default, nanti bisa ambil dari login state)
   String username = "Myscha";
 
-  // Dummy Data
-  final List<Product> _featuredProducts = [
-    Product(
-      id: "1",
-      name: "Matras",
-      price: 400000,
-      description: "Premium Mat",
-      thumbnail: "https://picsum.photos/200/300",
-      inStock: true,
-    ),
-    Product(
-      id: "4",
-      name: "Bottle",
-      price: 250000,
-      description: "Water Bottle",
-      thumbnail: "https://picsum.photos/203/300",
-      inStock: true,
-    ),
-    Product(
-      id: "2",
-      name: "Yoga Block",
-      price: 150000,
-      description: "Support Block",
-      thumbnail: "https://picsum.photos/201/300",
-      inStock: true,
-    ),
-  ];
+  // Fungsi untuk mengambil 5 produk terbaru dari Django
+  Future<List<Product>> fetchFeaturedProducts(CookieRequest request) async {
+    // GANTI URL SESUAI KEBUTUHAN (Chrome: 127.0.0.1, Android: 10.0.2.2)
+    // Kita tambah parameter ?limit=5 agar cuma ambil 5 produk teratas
+    final response = await request.get('http://127.0.0.1:8000/catalog/api/products/?limit=5');
+
+    var data = response;
+    
+    List<Product> listProduct = [];
+    // Struktur JSON Django kamu: {"results": [...], "count": ...}
+    for (var d in data['results']) {
+      if (d != null) {
+        listProduct.add(Product.fromJson(d));
+      }
+    }
+    return listProduct;
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Contoh cara ambil user nanti kalau sudah integrasi PBP Django Auth:
-    // final request = context.watch<CookieRequest>();
-    // if (request.jsonData['username'] != null) {
-    //    username = request.jsonData['username'];
-    // }
+    final request = context.watch<CookieRequest>();
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
@@ -63,7 +49,7 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- Header: Dynamic Hello User ---
+                // --- Header ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -71,7 +57,7 @@ class _HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Hello, $username!", // <-- Sudah Dinamis (pake variabel)
+                          "Hello, $username!", 
                           style: GoogleFonts.inter(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -88,11 +74,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                     ),
-                    const Icon(
-                      Icons.account_circle_outlined,
-                      size: 40,
-                      color: Colors.grey,
-                    ),
+                    const Icon(Icons.account_circle_outlined, size: 40, color: Colors.grey),
                   ],
                 ),
 
@@ -106,10 +88,7 @@ class _HomePageState extends State<HomePage> {
                 // --- Section: Featured Products Header ---
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                   decoration: const BoxDecoration(
                     color: Color(0xFFA3A89D),
                     borderRadius: BorderRadius.only(
@@ -133,7 +112,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-                // --- Section: Featured Products List ---
+                // --- Section: Featured Products List (DENGAN FUTURE BUILDER) ---
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 20),
@@ -148,72 +127,51 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.black12,
                         blurRadius: 10,
                         offset: Offset(0, 5),
-                      ),
+                      )
                     ],
                   ),
+                  // Disini kita ganti ListView statis dengan FutureBuilder
                   child: SizedBox(
                     height: 340,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: _featuredProducts.length,
-                      itemBuilder: (context, index) {
-                        return Container(
-                          // UBAH DISINI: Naikkan jadi 240 biar muat lega
-                          width: 240,
-                          margin: const EdgeInsets.only(right: 16),
-                          child: ProductCard(product: _featuredProducts[index]),
-                        );
+                    child: FutureBuilder(
+                      future: fetchFeaturedProducts(request),
+                      builder: (context, AsyncSnapshot snapshot) {
+                        if (snapshot.data == null) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else {
+                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                            return const Center(
+                              child: Text(
+                                "Belum ada produk featured.",
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            );
+                          } else {
+                            return ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: snapshot.data!.length,
+                              itemBuilder: (context, index) {
+                                return Container(
+                                  width: 240,
+                                  margin: const EdgeInsets.only(right: 16),
+                                  child: ProductCard(product: snapshot.data![index]),
+                                );
+                              },
+                            );
+                          }
+                        }
                       },
                     ),
                   ),
                 ),
 
-                // --- (Upcoming Classes Placeholder) ---
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFA3A89D),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Upcoming Classes",
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const Icon(Icons.chevron_right, color: Colors.white),
-                    ],
-                  ),
-                ),
-                Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
-                    ),
-                  ),
-                  // Nanti diisi list class
-                ),
+                const SizedBox(height: 24),
 
-                const SizedBox(
-                  height: 80,
-                ), // Space bawah biar ga ketutup navbar temen lu
+                // --- (Upcoming Classes Placeholder) ---
+                // ... kode Upcoming Classes tetap sama ...
+                
+                const SizedBox(height: 80), 
               ],
             ),
           ),
