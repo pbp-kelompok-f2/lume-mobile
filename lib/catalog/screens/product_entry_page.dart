@@ -14,18 +14,19 @@ class ProductEntryPage extends StatefulWidget {
 }
 
 class _ProductEntryPageState extends State<ProductEntryPage> {
-  
   // Fungsi untuk mengambil data dari Django
   Future<List<Product>> fetchProduct(CookieRequest request) async {
-    final response = await request.get('http://127.0.0.1:8000/catalog/api/products/');
+    final response = await request.get(
+      'http://127.0.0.1:8000/catalog/api/products/',
+    );
 
     // Melakukan decode response menjadi bentuk json
     var data = response;
 
     // Konversi data json menjadi object Product
     List<Product> listProduct = [];
-    
-    // Perhatikan struktur JSON dari Django kamu: 
+
+    // Perhatikan struktur JSON dari Django kamu:
     // {"count": 10, "results": [...]}
     // Jadi kita ambil data['results']
     for (var d in data['results']) {
@@ -42,7 +43,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      
+
       appBar: AppBar(
         backgroundColor: LumeColors.creamBackground,
         elevation: 0,
@@ -62,7 +63,10 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
         children: [
           // --- Search Bar (Tetap Sama) ---
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -77,10 +81,15 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                       decoration: InputDecoration(
                         hintText: "Search Products",
                         hintStyle: GoogleFonts.dmSans(color: Colors.grey),
-                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        ),
                         suffixIcon: const Icon(Icons.tune, color: Colors.grey),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -95,7 +104,10 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                     border: Border.all(color: Colors.grey.shade300),
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText),
+                    icon: const Icon(
+                      Icons.shopping_cart_outlined,
+                      color: LumeColors.darkText,
+                    ),
                     onPressed: () {},
                   ),
                 ),
@@ -116,22 +128,32 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                       children: [
                         Text(
                           "Tidak ada data produk.",
-                          style: TextStyle(color: Color(0xff59A5D8), fontSize: 20),
+                          style: TextStyle(
+                            color: Color(0xff59A5D8),
+                            fontSize: 20,
+                          ),
                         ),
                         SizedBox(height: 8),
                       ],
                     );
                   } else {
                     return GridView.builder(
-                      padding: const EdgeInsets.only(top: 16, bottom: 80, left: 16, right: 16),
+                      // Tambahkan padding di sekeliling Grid agar tidak mepet ke tepi layar
+                      padding: const EdgeInsets.all(20),
+
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.7,
+
+                        // UBAH BAGIAN INI (Naikkan dari 12 ke 16 atau 20)
+                        crossAxisSpacing: 16, // Jarak antar kartu ke samping
+                        mainAxisSpacing: 16, // Jarak antar kartu ke bawah
+
+                        childAspectRatio:
+                            0.7, // Rasio tinggi-lebar kartu (biarkan atau sesuaikan jika error overflow)
                       ),
                       itemCount: snapshot.data!.length,
-                      itemBuilder: (_, index) => ProductCard(product: snapshot.data![index]),
+                      itemBuilder: (_, index) =>
+                          ProductCard(product: snapshot.data![index]),
                     );
                   }
                 }
