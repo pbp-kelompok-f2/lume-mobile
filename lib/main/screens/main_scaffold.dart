@@ -13,14 +13,6 @@ class MainScaffold extends StatefulWidget {
 class _MainScaffoldState extends State<MainScaffold> {
   int _selectedIndex = 0;
 
-  // Daftar Halaman
-  final List<Widget> _screens = [
-    const HomePage(),           // Index 0
-    const ProductEntryPage(),   // Index 1
-    const Center(child: Text("Classes (Coming Soon)")), // Index 2
-    const Center(child: Text("Profile (Coming Soon)")), // Index 3
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -29,9 +21,27 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    // Kita definisikan list screens DI DALAM build atau gunakan switch case
+    // supaya bisa passing fungsi _onItemTapped ke HomePage
+    final List<Widget> screens = [
+      // Index 0: HomePage (Kirim fungsi navigasi ke sini!)
+      HomePage(
+        onNavigateTo: (index) => _onItemTapped(index),
+      ),
+      
+      // Index 1: Product Page
+      const ProductEntryPage(),   
+      
+      // Index 2: Classes (Placeholder)
+      const Center(child: Text("Classes (Coming Soon)")), 
+      
+      // Index 3: Profile (Placeholder)
+      const Center(child: Text("Profile (Coming Soon)")), 
+    ];
+
     return Scaffold(
       // Body ganti-ganti sesuai index
-      body: _screens[_selectedIndex],
+      body: screens[_selectedIndex],
 
       // Bottom Navbar
       bottomNavigationBar: BottomNavigationBar(
@@ -42,7 +52,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         unselectedItemColor: Colors.grey,
         selectedFontSize: 12,
         unselectedFontSize: 12,
-        onTap: _onItemTapped,
+        onTap: _onItemTapped, // Fungsi ini yang dipanggil oleh Navbar maupun Banner
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
