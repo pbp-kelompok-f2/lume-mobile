@@ -3,8 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
-
-import 'package:lume_mobile/main/screens/main_scaffold.dart'; 
+import 'package:lume_mobile/main/screens/main_scaffold.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,9 +35,7 @@ class MyApp extends StatelessWidget {
             Theme.of(context).textTheme,
           ),
         ),
-        // --- GANTI BAGIAN INI ---
-        // Gunakan MainScaffold agar Navbar muncul
-        home: const MainScaffold(), 
+        home: const MainScaffold(),
       ),
     );
   }
