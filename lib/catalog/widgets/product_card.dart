@@ -2,18 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:intl/intl.dart';
 import 'package:lume_mobile/catalog/screens/product_detail_page.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+import 'dart:convert'; // Untuk jsonEncode
 
-class ProductCard extends StatelessWidget {
+class AppProductCard extends StatefulWidget {
   final Product product;
+  final Function(GlobalKey) runAnimation; // Terima fungsi dari parent
 
-  const ProductCard({super.key, required this.product});
+  const AppProductCard({
+    super.key, 
+    required this.product, 
+    required this.runAnimation
+  });
+
+  @override
+  State<AppProductCard> createState() => _AppProductCardState();
+}
+
+class _AppProductCardState extends State<AppProductCard> {
+  // Key untuk gambar produk ini
+  final GlobalKey widgetKey = GlobalKey(); 
+
+  // Fungsi Add to Cart + Animasi
+  void _handleAddToCart(CookieRequest request) async {
+    // 1. Jalankan Animasi Dulu (Visual Feedback)
+    widget.runAnimation(widgetKey);
+
+    // 2. Kirim Request ke Server (Background)
+    // Jangan pakai await di sini agar animasi langsung jalan mulus
+    request.postJson(
+      "http://127.0.0.1:8000/cart/flutter/add/", 
+      jsonEncode(<String, dynamic>{
+        'product_id': widget.product.id,
+        'quantity': 1,
+      }),
+    ).then((response) {
+      if (mounted) {
+        if (response['ok'] == true) {
+          // Sukses (Optional: Update badge cart)
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response['message'] ?? "Failed"), backgroundColor: Colors.red),
+          );
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final request = context.read<CookieRequest>();
     final currencyFormatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
+      locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0
     );
 
     return Container(
@@ -35,9 +76,7 @@ class ProductCard extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => ProductDetailPage(product: product),
-              ),
+              MaterialPageRoute(builder: (context) => ProductDetailPage(product: widget.product)),
             );
           },
           child: Padding(
@@ -45,93 +84,61 @@ class ProductCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header: Nama Produk (1 Baris + Ellipsis biar rapi)
                 Text(
-                  product.name,
+                  widget.product.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E252B),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E252B)),
+                ),
+                const SizedBox(height: 12),
+
+                // --- BAGIAN FOTO ---
+                AspectRatio(
+                  aspectRatio: 1.0, 
+                  child: Container(
+                    key: widgetKey, // TEMPEL KEY DI SINI (Sumber Animasi)
+                    width: double.infinity,
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: widget.product.thumbnail.isNotEmpty
+                              ? Image.network(
+                                  widget.product.thumbnail,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                )
+                              : const Center(child: Icon(Icons.photo)),
+                        ),
+                        // ... (Best seller tag) ...
+                      ],
+                    ),
                   ),
                 ),
                 
-                const SizedBox(height: 12),
-
-                // --- BAGIAN FOTO (FIXED SIZE) ---
-                // Menggunakan AspectRatio agar semua foto ukurannya SAMA (Kotak 1:1)
-                AspectRatio(
-                  aspectRatio: 1.0, // Rasio 1:1 (Kotak). Ubah jadi 0.8 jika ingin agak tinggi (portrait).
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width: double.infinity,
-                          height: double.infinity,
-                          color: const Color(0xFFEBE8DF), // Warna placeholder saat loading
-                          child: product.thumbnail.isNotEmpty
-                              ? Image.network(
-                                  product.thumbnail,
-                                  fit: BoxFit.cover, // KUNCI: Gambar mengisi penuh kotak, crop jika perlu
-                                  errorBuilder: (ctx, error, stackTrace) =>
-                                      const Center(child: Icon(Icons.image_not_supported, color: Colors.white, size: 30)),
-                                )
-                              : const Center(child: Icon(Icons.photo, color: Colors.white, size: 30)),
-                        ),
-                      ),
-                      // Tag Best Seller
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF8E9388),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            "Best-seller",
-                            style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // ---------------------------------
-
-                const Spacer(), // Dorong elemen bawah ke dasar kartu
-
+                const Spacer(),
                 const SizedBox(height: 8),
 
-                // Footer: Harga & Tombol Cart
+                // Footer
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
-                        currencyFormatter.format(product.price),
+                        currencyFormatter.format(widget.product.price),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E252B),
-                        ),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1E252B)),
                       ),
                     ),
                     const SizedBox(width: 4),
-                    // Tombol Cart Kecil
+                    
+                    // --- TOMBOL ADD TO CART ---
                     InkWell(
-                      onTap: () {
-                         ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("${product.name} added to cart!")),
-                         );
-                      },
+                      onTap: () => _handleAddToCart(request), // Panggil Fungsi
                       child: Container(
-                        padding: const EdgeInsets.all(8), // Icon only biar muat
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: const Color(0xFFA8AF9F),
                           borderRadius: BorderRadius.circular(8),

@@ -112,7 +112,7 @@ class _HomePageState extends State<HomePage> {
                                 return Container(
                                   width: 240,
                                   margin: const EdgeInsets.only(right: 16),
-                                  child: ProductCard(product: snapshot.data![index]),
+                                  child: AppProductCard(product: snapshot.data![index]),
                                 );
                               },
                             );
