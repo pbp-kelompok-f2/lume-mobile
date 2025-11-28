@@ -4,10 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/catalog/widgets/product_card.dart';
-import 'package:lume_mobile/cart/screens/cart.dart'; 
+import 'package:lume_mobile/cart/screens/cart.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:add_to_cart_animation/add_to_cart_animation.dart'; // IMPORT INI
+import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
 class ProductEntryPage extends StatefulWidget {
   const ProductEntryPage({super.key});
@@ -17,22 +17,22 @@ class ProductEntryPage extends StatefulWidget {
 }
 
 class _ProductEntryPageState extends State<ProductEntryPage> {
-  // --- Animation Keys ---
+  // --- ANIMATION KEYS ---
   GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>();
   late Function(GlobalKey) runAddToCartAnimation;
 
-  // --- Data State ---
+  // --- State Data ---
   List<Product> _displayedProducts = [];
   List<Product> _allCachedProducts = [];
   
-  // --- Pagination State ---
+  // --- State Pagination ---
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _offset = 0;
   final int _limit = 6;
-  
-  // --- Filter & Search State ---
+
+  // --- State Filter & Search ---
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _minPriceController = TextEditingController();
@@ -44,19 +44,20 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
   String _sortOption = "default";
   Timer? _debounce;
 
-  bool get _isFiltering => 
-      _searchQuery.isNotEmpty || 
-      _minPrice != null || 
-      _maxPrice != null || 
+  bool get _isFiltering =>
+      _searchQuery.isNotEmpty ||
+      _minPrice != null ||
+      _maxPrice != null ||
       _sortOption != "default";
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(() {
-      if (!_isFiltering && 
-          _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
-          !_isLoadingMore && 
+      if (!_isFiltering &&
+          _scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !_isLoadingMore &&
           _hasMore) {
         _fetchPagedProducts();
       }
@@ -66,10 +67,6 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
       _fetchPagedProducts(refresh: true);
     });
   }
-
-  // ... (dispose, _fetchPagedProducts, _runFilterMode, _onSearchChanged, _showFilterModal, _buildFilterChip, _buildPriceInput SAMA SEPERTI SEBELUMNYA) ...
-  // Biar hemat tempat, saya skip bagian yang tidak berubah. Copy paste dari kode sebelumnya untuk method-method logic tersebut.
-  // Pastikan method-method tersebut tetap ada di dalam class ini.
 
   @override
   void dispose() {
@@ -81,35 +78,82 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
     super.dispose();
   }
 
+  // --- FETCH DATA ---
   Future<void> _fetchPagedProducts({bool refresh = false}) async {
     final request = context.read<CookieRequest>();
     if (refresh) {
       setState(() {
-        _isLoading = true; _offset = 0; _hasMore = true; _displayedProducts.clear();
+        _isLoading = true;
+        _offset = 0;
+        _hasMore = true;
+        _displayedProducts.clear();
       });
     } else {
       setState(() => _isLoadingMore = true);
     }
+
     try {
-      final response = await request.get('http://127.0.0.1:8000/catalog/api/products/?limit=$_limit&offset=$_offset');
+      final response = await request.get(
+        'http://127.0.0.1:8000/catalog/api/products/?limit=$_limit&offset=$_offset',
+      );
+      
       List<Product> newItems = [];
-      for (var d in response['results']) { if (d != null) newItems.add(Product.fromJson(d)); }
+      if (response['results'] != null) {
+         for (var d in response['results']) {
+           if (d != null) newItems.add(Product.fromJson(d));
+         }
+      }
+
       if (!mounted) return;
       setState(() {
         _displayedProducts.addAll(newItems);
         _offset += newItems.length;
         if (newItems.length < _limit) _hasMore = false;
-        _isLoading = false; _isLoadingMore = false;
+        _isLoading = false;
+        _isLoadingMore = false;
       });
     } catch (e) {
-      if(mounted) setState(() => _isLoading = false);
+      debugPrint("Error fetch paging: $e");
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _runFilterMode() async {
-     // ... (Copy logika filter dari kode sebelumnya di sini) ...
-     // Untuk mempersingkat, asumsikan logika ini sama persis
-     setState(() => _isLoading = false); 
+    setState(() => _isLoading = true);
+    if (_allCachedProducts.isEmpty) {
+      final request = context.read<CookieRequest>();
+      try {
+        final response = await request.get(
+          'http://127.0.0.1:8000/catalog/api/products/?limit=1000',
+        );
+        List<Product> list = [];
+        if (response['results'] != null) {
+          for (var d in response['results']) {
+            if (d != null) list.add(Product.fromJson(d));
+          }
+        }
+        _allCachedProducts = list;
+      } catch (e) { debugPrint("Error fetch all: $e"); }
+    }
+
+    List<Product> results = List.from(_allCachedProducts);
+    if (_searchQuery.isNotEmpty) {
+      results = results.where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    }
+    if (_minPrice != null) {
+      results = results.where((p) => p.price >= _minPrice!).toList();
+    }
+    if (_maxPrice != null) {
+      results = results.where((p) => p.price <= _maxPrice!).toList();
+    }
+
+    switch (_sortOption) {
+      case 'price_asc': results.sort((a, b) => a.price.compareTo(b.price)); break;
+      case 'price_desc': results.sort((a, b) => b.price.compareTo(a.price)); break;
+      case 'name_asc': results.sort((a, b) => a.name.compareTo(b.name)); break;
+    }
+
+    if (mounted) setState(() { _displayedProducts = results; _isLoading = false; });
   }
 
   void _onSearchChanged(String query) {
@@ -121,30 +165,130 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
   }
 
   void _showFilterModal() {
-     // ... (Copy logika modal filter dari kode sebelumnya) ...
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          top: 24, left: 24, right: 24, 
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Filter & Sort", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text("Sort By", style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                _buildFilterChip("Default", "default", ctx),
+                _buildFilterChip("Lowest Price", "price_asc", ctx),
+                _buildFilterChip("Highest Price", "price_desc", ctx),
+                _buildFilterChip("Name (A-Z)", "name_asc", ctx),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text("Price Range (Rp)", style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _buildPriceInput(_minPriceController, "Min", (v) => _minPrice = v)),
+                const SizedBox(width: 12),
+                const Text("-"),
+                const SizedBox(width: 12),
+                Expanded(child: _buildPriceInput(_maxPriceController, "Max", (v) => _maxPrice = v)),
+              ],
+            ),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      setState(() {
+                        _minPrice = null; _maxPrice = null; _sortOption = "default";
+                        _minPriceController.clear(); _maxPriceController.clear();
+                      });
+                      Navigator.pop(ctx);
+                      if (_searchQuery.isEmpty) { _fetchPagedProducts(refresh: true); } else { _runFilterMode(); }
+                    },
+                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    child: const Text("Reset", style: TextStyle(color: Colors.black)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _runFilterMode();
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: LumeColors.sageGreen, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    child: const Text("Apply", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
   }
-  
-  Widget _buildFilterChip(String label, String value) {
-     // ... (Copy logika chip dari kode sebelumnya) ...
-     return Container(); // Placeholder
+
+  Widget _buildFilterChip(String label, String value, BuildContext ctx) {
+    bool selected = _sortOption == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (val) {
+        setState(() => _sortOption = value);
+        Navigator.pop(ctx);
+        _showFilterModal();
+      },
+      selectedColor: LumeColors.sageGreen,
+      labelStyle: TextStyle(color: selected ? Colors.white : Colors.black),
+      backgroundColor: Colors.grey.shade100,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide.none),
+    );
   }
 
   Widget _buildPriceInput(TextEditingController controller, String hint, Function(double?) onChanged) {
-     // ... (Copy logika input dari kode sebelumnya) ...
-     return Container(); // Placeholder
+    return TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      onChanged: (val) => onChanged(double.tryParse(val)),
+      decoration: InputDecoration(
+        hintText: hint, filled: true, fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
   }
 
   // --- BUILD UTAMA ---
   @override
   Widget build(BuildContext context) {
     return AddToCartAnimation(
-      cartKey: cartKey, // Kunci Target (Icon Cart)
-      height: 30, // Ukuran gambar saat terbang
+      cartKey: cartKey,
+      height: 30,
       width: 30,
       opacity: 0.85,
+      // --- UPDATE DI SINI: Matikan Rotasi ---
       dragAnimation: const DragToCartAnimationOptions(
-        rotation: true,
+        rotation: false, // Tidak berputar, cuma terbang biasa
       ),
+      // --------------------------------------
       jumpAnimation: const JumpAnimationOptions(),
       createAddToCartAnimation: (runAddToCartAnimation) {
         this.runAddToCartAnimation = runAddToCartAnimation;
@@ -159,7 +303,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
         ),
         body: Column(
           children: [
-            // --- SEARCH BAR & CART ICON ---
+            // --- Search & Cart ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Row(
@@ -179,8 +323,10 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                           hintText: "Search Products",
                           hintStyle: GoogleFonts.dmSans(color: Colors.grey),
                           prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                          // Note: Saya disable filter button sementara di kode ini biar ringkas
-                          // suffixIcon: ... (tombol filter)
+                          suffixIcon: IconButton(
+                            icon: Icon(Icons.tune, color: _isFiltering ? LumeColors.sageGreen : Colors.grey),
+                            onPressed: _showFilterModal,
+                          ),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -189,56 +335,44 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                   ),
                   const SizedBox(width: 12),
                   
-                  // --- TARGET ANIMASI (CART ICON) ---
-                  AddToCartIcon(
-                    key: cartKey,
-                    icon: Container(
-                      height: 48,
-                      width: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                  // --- CART ICON (Target Animasi) ---
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const CartPage()));
+                    },
+                    child: AddToCartIcon(
+                      key: cartKey,
+                      icon: Container(
+                        height: 48, width: 48,
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
+                        child: const Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText),
                       ),
-                      child: const Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText),
                     ),
-                    badge: const SizedBox(), // Bisa diisi badge angka merah nanti
-                  ).onClick((_) {
-                     // Navigasi ke Halaman Cart saat diklik
-                     Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const CartPage()),
-                      );
-                  }),
+                  ),
                 ],
               ),
             ),
 
-            // --- GRID PRODUK ---
+            // --- GRID ---
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _displayedProducts.isEmpty
-                      ? const Center(child: Text("No products found."))
+                      ? Center(child: Text("No products found.", style: GoogleFonts.inter(color: Colors.grey)))
                       : GridView.builder(
                           controller: _scrollController,
                           padding: const EdgeInsets.all(20),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 0.7,
+                            crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.7,
                           ),
                           itemCount: _displayedProducts.length + (_isLoadingMore ? 1 : 0),
                           itemBuilder: (context, index) {
                             if (index == _displayedProducts.length) {
                               return const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()));
                             }
-                            
-                            // Panggil ProductCard dan oper fungsi animasi
                             return AppProductCard(
                               product: _displayedProducts[index],
-                              runAnimation: runAddToCartAnimation, // OPER FUNGSI KE SINI
+                              runAnimation: runAddToCartAnimation, 
                             );
                           },
                         ),

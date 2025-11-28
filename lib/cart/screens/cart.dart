@@ -1,8 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/models/cart_items.dart';
-import 'package:lume_mobile/theme/lume_colors.dart'; // Import LumeColors
+import 'package:lume_mobile/theme/lume_colors.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -13,12 +14,11 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   List<CartItem> _cartItems = [];
-  // State lokal untuk menyimpan ID item yang dicentang
-  final Set<int> _selectedItemIds = {}; 
+  final Set<int> _selectedItemIds = {};
   bool _isLoading = true;
 
-  // Ganti URL ini dengan URL backend Django lokal/deploy kamu
-  final String baseUrl = "http://127.0.0.1:8000"; 
+  // Sesuaikan URL backend
+  final String baseUrl = "http://127.0.0.1:8000";
 
   @override
   void initState() {
@@ -30,23 +30,29 @@ class _CartPageState extends State<CartPage> {
 
   Future<void> _fetchCartItems() async {
     final request = context.read<CookieRequest>();
+    setState(() => _isLoading = true);
     try {
-      var response = await request.get('$baseUrl/cart/api/get-cart/'); 
-      
+      // URL ENDPOINT YANG BENAR
+      var response = await request.get('$baseUrl/cart/flutter/list/');
+
+      // CEK STRUKTUR JSON
       List<CartItem> items = [];
-      for (var d in response) {
-        if (d != null) {
-          items.add(CartItem.fromJson(d));
+      if (response['items'] != null) {
+        for (var d in response['items']) {
+          if (d != null) {
+            items.add(CartItem.fromJson(d));
+          }
         }
       }
 
       setState(() {
         _cartItems = items;
         _isLoading = false;
+        // Opsional: Reset seleksi atau pertahankan jika perlu
       });
     } catch (e) {
-      print("Error fetching cart: $e");
-      setState(() => _isLoading = false);
+      debugPrint("Error fetching cart: $e");
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -72,18 +78,43 @@ class _CartPageState extends State<CartPage> {
     });
   }
 
+  // --- FUNGSI UPDATE KE SERVER (OPSIONAL) ---
+  Future<void> _updateItemQuantity(int itemId, int newQty) async {
+      // TODO: Panggil API update quantity di sini
+      // final request = context.read<CookieRequest>();
+      // await request.postJson(...);
+      // Sementara update lokal dulu:
+      setState(() {
+         final index = _cartItems.indexWhere((item) => item.id == itemId);
+         if (index != -1) {
+            _cartItems[index].quantity = newQty;
+         }
+      });
+  }
+
+  Future<void> _deleteItem(int itemId) async {
+      // TODO: Panggil API delete di sini
+      // final request = context.read<CookieRequest>();
+      // await request.postJson(...);
+      // Sementara update lokal:
+      setState(() {
+         _cartItems.removeWhere((item) => item.id == itemId);
+         _selectedItemIds.remove(itemId);
+      });
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    // Cek apakah semua item terpilih untuk status checkbox 'Select All'
     bool isAllSelected = _cartItems.isNotEmpty && _selectedItemIds.length == _cartItems.length;
 
     return Scaffold(
-      backgroundColor: LumeColors.creamBackground, // Background Cream
+      backgroundColor: LumeColors.creamBackground,
       appBar: AppBar(
         title: const Text(
           "Shopping Cart",
           style: TextStyle(
-            color: LumeColors.darkText, 
+            color: LumeColors.darkText,
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
@@ -100,7 +131,7 @@ class _CartPageState extends State<CartPage> {
           ? const Center(child: CircularProgressIndicator(color: LumeColors.darkGreen))
           : Column(
               children: [
-                // === Bagian List Items ===
+                // === List Items ===
                 Expanded(
                   child: _cartItems.isEmpty
                       ? Center(
@@ -124,22 +155,20 @@ class _CartPageState extends State<CartPage> {
                         ),
                 ),
                 
-                // === Bagian Order Summary (Bottom Sheet style) ===
-                if (_cartItems.isNotEmpty) 
-                  _buildOrderSummary(isAllSelected),
+                // === Order Summary ===
+                if (_cartItems.isNotEmpty) _buildOrderSummary(isAllSelected),
               ],
             ),
     );
   }
 
-  // Widget Kartu Produk (Sesuai Desain: Checkbox -> Gambar -> Info -> Kontrol)
   Widget _buildCartItemCard(CartItem item) {
     bool isSelected = _selectedItemIds.contains(item.id);
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: LumeColors.cardBackground, // Background Beige/Card
+        color: LumeColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -152,7 +181,7 @@ class _CartPageState extends State<CartPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 0. Checkbox
+          // Checkbox
           SizedBox(
             width: 24,
             height: 24,
@@ -174,21 +203,22 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(width: 12),
 
-          // 1. Gambar Produk
+          // Gambar
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
+              // Handle URL gambar dengan benar (jika relatif tambahkan baseUrl)
               item.image.startsWith('http') ? item.image : '$baseUrl/media/${item.image}',
               width: 70,
-              height: 90, // Agak memanjang vertikal sesuai desain
+              height: 90,
               fit: BoxFit.cover,
-              errorBuilder: (ctx, error, stackTrace) => 
+              errorBuilder: (ctx, error, stackTrace) =>
                   Container(width: 70, height: 90, color: Colors.grey[300], child: const Icon(Icons.image)),
             ),
           ),
           const SizedBox(width: 16),
 
-          // 2. Info Produk (Nama & Harga)
+          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,7 +226,7 @@ class _CartPageState extends State<CartPage> {
                 Text(
                   item.productName,
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold, 
+                    fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: LumeColors.darkText,
                   ),
@@ -207,7 +237,7 @@ class _CartPageState extends State<CartPage> {
                 Text(
                   "Rp ${item.price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}",
                   style: const TextStyle(
-                    color: LumeColors.mutedText, 
+                    color: LumeColors.mutedText,
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
                   ),
@@ -216,11 +246,10 @@ class _CartPageState extends State<CartPage> {
             ),
           ),
 
-          // 3. Delete & Quantity Control
+          // Controls
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Quantity Controller (- 1 +)
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: LumeColors.brownBorder),
@@ -229,9 +258,8 @@ class _CartPageState extends State<CartPage> {
                 child: Row(
                   children: [
                     _buildQtyBtn(Icons.remove, () {
-                      if (item.quantity > 1) { 
-                        // Tambahkan logika decrement ke backend
-                        setState(() => item.quantity--);
+                      if (item.quantity > 1) {
+                        _updateItemQuantity(item.id, item.quantity - 1);
                       }
                     }),
                     Padding(
@@ -242,24 +270,14 @@ class _CartPageState extends State<CartPage> {
                       ),
                     ),
                     _buildQtyBtn(Icons.add, () {
-                      // Tambahkan logika increment ke backend
-                      setState(() => item.quantity++);
+                      _updateItemQuantity(item.id, item.quantity + 1);
                     }),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
-              
-              // Tombol Hapus (Icon Sampah)
               InkWell(
-                onTap: () async {
-                   // Implementasi logika hapus ke backend
-                   // await request.post('$baseUrl/cart/delete/${item.id}/', {});
-                   setState(() {
-                     _cartItems.removeAt(_cartItems.indexOf(item));
-                     _selectedItemIds.remove(item.id);
-                   });
-                },
+                onTap: () => _deleteItem(item.id),
                 child: const Padding(
                   padding: EdgeInsets.all(4.0),
                   child: Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
@@ -282,12 +300,11 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  // Widget Order Summary di bagian bawah
   Widget _buildOrderSummary(bool isAllSelected) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
-        color: Colors.white, // Bagian bawah putih/bersih agar kontras dengan cream
+        color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
@@ -300,7 +317,6 @@ class _CartPageState extends State<CartPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Select All Checkbox (Opsional, sesuai kebiasaan Cart)
           Row(
             children: [
               SizedBox(
@@ -336,16 +352,15 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(height: 20),
           
-          // Tombol Checkout
           SizedBox(
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
               onPressed: _selectedItemIds.isEmpty ? null : () {
-                // Navigate to Checkout Page
+                // Navigate to Checkout Page logic
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: LumeColors.darkGreen, // Warna Dark Green
+                backgroundColor: LumeColors.darkGreen,
                 disabledBackgroundColor: Colors.grey[300],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -364,7 +379,6 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(height: 12),
 
-          // Tombol Continue Shopping
           SizedBox(
             width: double.infinity,
             height: 52,
@@ -373,7 +387,7 @@ class _CartPageState extends State<CartPage> {
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: LumeColors.brownBorder),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(26), // Capsule shape
+                  borderRadius: BorderRadius.circular(26),
                 ),
               ),
               child: const Text(
