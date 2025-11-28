@@ -1,6 +1,6 @@
+import 'dart:async'; // Tambah ini untuk Timer debounce search
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lume_mobile/cart/screens/cart.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/catalog/widgets/product_card.dart';
@@ -15,320 +15,130 @@ class ProductEntryPage extends StatefulWidget {
 }
 
 class _ProductEntryPageState extends State<ProductEntryPage> {
-  // State untuk Data
-  List<Product> _allProducts = []; // Data mentah dari API
-  List<Product> _displayedProducts =
-      []; // Data yang ditampilkan (setelah difilter)
-  bool _isLoading = true;
+  // --- STATE PAGINATION ---
+  List<Product> _products = [];
+  bool _isFirstLoad = true; // Loading awal (tengah layar)
+  bool _isLoadingMore = false; // Loading bawah (spinner kecil)
+  bool _hasMore = true; // Apakah masih ada data di server?
+  int _offset = 0;
+  final int _limit = 6; // Jumlah produk per "halaman"
 
-  // State untuk Search & Filter
+  // --- STATE SEARCH & FILTER ---
   String _searchQuery = "";
-  double? _minPrice;
-  double? _maxPrice;
-  String _sortOption =
-      "default"; // default, price_asc, price_desc, name_asc, name_desc
-
-  // Controller Text Field Filter
-  final TextEditingController _minPriceController = TextEditingController();
-  final TextEditingController _maxPriceController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  Timer? _debounce; // Biar ga request server tiap ketik 1 huruf
 
   @override
   void initState() {
     super.initState();
-    // Ambil data saat halaman pertama kali dibuka
+    
+    // 1. Setup Scroll Listener (Infinite Scroll)
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= 
+          _scrollController.position.maxScrollExtent - 200) {
+        // Kalau sudah mau mentok bawah, load lagi
+        if (!_isLoadingMore && _hasMore) {
+          _fetchProducts();
+        }
+      }
+    });
+
+    // 2. Load Awal
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchProducts();
+      _fetchProducts(refresh: true);
     });
   }
 
-  // 1. FUNGSI AMBIL DATA DARI DJANGO
-  Future<void> _fetchProducts() async {
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  // --- FUNGSI FETCH DATA (PAGINATION) ---
+  Future<void> _fetchProducts({bool refresh = false}) async {
     final request = context.read<CookieRequest>();
-    setState(() => _isLoading = true);
+
+    if (refresh) {
+      if (!mounted) return;
+      setState(() {
+        _isFirstLoad = true;
+        _offset = 0;
+        _hasMore = true;
+        _products.clear(); // Kosongkan list kalau refresh/search baru
+      });
+    } else {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingMore = true;
+      });
+    }
 
     try {
-      // GANTI URL SESUAI KEBUTUHAN (127.0.0.1 untuk Chrome, 10.0.2.2 untuk Android Emulator)
-      final response = await request.get(
-        'http://127.0.0.1:8000/catalog/api/products/',
-      );
+      // URL dengan Parameter Pagination & Search
+      // limit: jumlah per load
+      // offset: mulai dari data ke berapa
+      // q: query pencarian
+      String url = 'http://127.0.0.1:8000/catalog/api/products/?limit=$_limit&offset=$_offset';
+      if (_searchQuery.isNotEmpty) {
+        url += '&q=$_searchQuery';
+      }
 
-      List<Product> list = [];
+      final response = await request.get(url);
+      
+      List<Product> newItems = [];
       for (var d in response['results']) {
         if (d != null) {
-          list.add(Product.fromJson(d));
+          newItems.add(Product.fromJson(d));
         }
       }
 
+      if (!mounted) return;
+
       setState(() {
-        _allProducts = list;
-        _displayedProducts = list; // Awalnya tampilkan semua
-        _isLoading = false;
+        // Gabungkan data lama + data baru
+        _products.addAll(newItems);
+        
+        // Update offset untuk fetch berikutnya
+        _offset += newItems.length;
+
+        // Cek apakah data sudah habis
+        if (newItems.length < _limit) {
+          _hasMore = false;
+        }
+
+        _isFirstLoad = false;
+        _isLoadingMore = false;
       });
+
     } catch (e) {
       debugPrint("Error fetching products: $e");
-      setState(() => _isLoading = false);
-    }
-  }
-
-  // 2. FUNGSI LOGIC FILTER & SORT
-  void _runFilter() {
-    List<Product> results = _allProducts;
-
-    // a. Filter Search Query
-    if (_searchQuery.isNotEmpty) {
-      results = results
-          .where(
-            (p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()),
-          )
-          .toList();
-    }
-
-    // b. Filter Harga Min
-    if (_minPrice != null) {
-      results = results.where((p) => p.price >= _minPrice!).toList();
-    }
-
-    // c. Filter Harga Max
-    if (_maxPrice != null) {
-      results = results.where((p) => p.price <= _maxPrice!).toList();
-    }
-
-    // d. Sorting Logic
-    switch (_sortOption) {
-      case 'price_asc':
-        results.sort((a, b) => a.price.compareTo(b.price));
-        break;
-      case 'price_desc':
-        results.sort((a, b) => b.price.compareTo(a.price));
-        break;
-      case 'name_asc':
-        results.sort((a, b) => a.name.compareTo(b.name));
-        break;
-      case 'name_desc':
-        results.sort((a, b) => b.name.compareTo(a.name));
-        break;
-    }
-
-    setState(() {
-      _displayedProducts = results;
-    });
-  }
-
-  // 3. UI BOTTOM SHEET FILTER
-  void _showFilterModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled:
-          true, // Agar bisa full screen/resize saat keyboard muncul
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      backgroundColor: Colors.white,
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            top: 24,
-            left: 24,
-            right: 24,
-            bottom:
-                MediaQuery.of(context).viewInsets.bottom +
-                24, // Handle keyboard
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Modal
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Filter & Sort",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // --- Section: Sort By ---
-              const Text(
-                "Sort By",
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  _buildSortChip("Default", "default"),
-                  _buildSortChip("Lowest Price", "price_asc"),
-                  _buildSortChip("Highest Price", "price_desc"),
-                  _buildSortChip("Name (A-Z)", "name_asc"),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // --- Section: Price Range ---
-              const Text(
-                "Price Range (Rp)",
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _minPriceController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: "Min",
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onChanged: (val) {
-                        _minPrice = val.isEmpty ? null : double.tryParse(val);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    "-",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _maxPriceController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: "Max",
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onChanged: (val) {
-                        _maxPrice = val.isEmpty ? null : double.tryParse(val);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 32),
-
-              // --- Buttons: Reset & Apply ---
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        // Reset Logic
-                        setState(() {
-                          _minPrice = null;
-                          _maxPrice = null;
-                          _sortOption = "default";
-                          _minPriceController.clear();
-                          _maxPriceController.clear();
-                        });
-                        Navigator.pop(context); // Tutup modal dulu
-                        _runFilter(); // Jalankan filter (kembali ke default)
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: const BorderSide(color: Colors.grey),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Reset",
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Tutup modal
-                        _runFilter(); // Jalankan filter
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: LumeColors.sageGreen,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Apply",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // Helper Widget buat Chip Sort
-  Widget _buildSortChip(String label, String value) {
-    bool isSelected = _sortOption == value;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
+      if (mounted) {
         setState(() {
-          // Update state UI modal (perlu StatefulBuilder kalau mau real-time update visual di modal,
-          // tapi karena modal me-rebuild saat state parent berubah, ini work)
-          _sortOption = value;
-          Navigator.pop(
-            context,
-          ); // Hack kecil: tutup buka lagi biar refresh, atau biarkan user tekan apply
-          _showFilterModal(); // Re-open biar kelihatan ke-select
+          _isFirstLoad = false;
+          _isLoadingMore = false;
         });
-      },
-      selectedColor: LumeColors.sageGreen,
-      labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
-      backgroundColor: Colors.grey.shade100,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide.none,
-      ),
-    );
+      }
+    }
+  }
+
+  // Fungsi Search dengan Delay (Debounce)
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 600), () {
+      setState(() {
+        _searchQuery = query;
+      });
+      _fetchProducts(refresh: true); // Reset dan cari ulang ke server
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-
+      
       appBar: AppBar(
         backgroundColor: LumeColors.creamBackground,
         elevation: 0,
@@ -346,12 +156,9 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
 
       body: Column(
         children: [
-          // --- Search Bar & Filter Button ---
+          // --- Search Bar ---
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               children: [
                 Expanded(
@@ -363,39 +170,20 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                       border: Border.all(color: Colors.grey.shade300),
                     ),
                     child: TextField(
-                      onChanged: (value) {
-                        _searchQuery = value;
-                        _runFilter(); // Live search
-                      },
+                      onChanged: _onSearchChanged, // Panggil search server-side
                       decoration: InputDecoration(
                         hintText: "Search Products",
                         hintStyle: GoogleFonts.dmSans(color: Colors.grey),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Colors.grey,
-                        ),
-                        // TOMBOL FILTER DISINI
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            Icons.tune,
-                            color:
-                                (_minPrice != null ||
-                                    _maxPrice != null ||
-                                    _sortOption != "default")
-                                ? LumeColors.sageGreen
-                                : Colors.grey,
-                          ),
-                          onPressed: _showFilterModal,
-                        ),
+                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                        // Note: Filter tombol bisa ditambahkan disini
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
+                // Tombol Cart (Dummy Navigation)
                 Container(
                   height: 48,
                   width: 48,
@@ -405,17 +193,9 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                     border: Border.all(color: Colors.grey.shade300),
                   ),
                   child: IconButton(
-                    icon: const Icon(
-                      Icons.shopping_cart_outlined,
-                      color: LumeColors.darkText,
-                    ),
+                    icon: const Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CartPage(),
-                        ),
-                      );
+                      // Navigator.pushNamed(context, '/cart');
                     },
                   ),
                 ),
@@ -423,44 +203,49 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
             ),
           ),
 
-          // --- Product Grid ---
+          // --- Product Grid (Infinite Scroll) ---
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _displayedProducts.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "No products found.",
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            color: Colors.grey,
+            child: _isFirstLoad 
+              ? const Center(child: CircularProgressIndicator())
+              : _products.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
+                          Text(
+                            "No products found.",
+                            style: GoogleFonts.inter(fontSize: 16, color: Colors.grey),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    )
+                  : GridView.builder(
+                      controller: _scrollController, // Pasang Controller
+                      padding: const EdgeInsets.all(20),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.7,
+                      ),
+                      // Tambah 1 item jika sedang loading bawah (untuk spinner)
+                      itemCount: _products.length + (_isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        // Jika index melebihi data produk, tampilkan loading spinner
+                        if (index == _products.length) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
+                        // Tampilkan Kartu Produk
+                        return ProductCard(product: _products[index]);
+                      },
                     ),
-                  )
-                : GridView.builder(
-                    padding: const EdgeInsets.all(20),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.7,
-                        ),
-                    itemCount: _displayedProducts.length,
-                    itemBuilder: (_, index) =>
-                        ProductCard(product: _displayedProducts[index]),
-                  ),
           ),
         ],
       ),
