@@ -56,9 +56,13 @@ class _LoginPageState extends State<LoginPage> {
                     String username = _usernameController.text;
                     String password = _passwordController.text;
 
+                    // GANTI URL:
+                    // Android Emulator: http://10.0.2.2:8000/user/login/
+                    // Chrome / iOS: http://127.0.0.1:8000/user/login/
                     final response = await request.login("http://127.0.0.1:8000/user/login/", {
                       'username': username,
                       'password': password,
+                      'ajax': '1', // <--- TAMBAHKAN BARIS INI WAJIB!
                     });
 
                     if (request.loggedIn) {
@@ -67,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => const MainScaffold(initialIndex: 3)),
+                          MaterialPageRoute(builder: (context) => const MainScaffold()),
                         );
                       }
                     } else {
