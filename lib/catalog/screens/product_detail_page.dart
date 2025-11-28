@@ -5,6 +5,7 @@ import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:lume_mobile/cart/providers/cart_provider.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -17,6 +18,7 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   
+  // Ubah fungsi ini menggunakan Provider
   void _addToCart(CookieRequest request) async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -25,16 +27,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       ),
     );
 
-    final response = await request.postJson(
-      "http://127.0.0.1:8000/cart/flutter/add/", 
-      jsonEncode(<String, dynamic>{
-        'product_id': widget.product.id,
-        'quantity': 1,
-      }),
+    // Panggil fungsi dari CartProvider
+    final success = await context.read<CartProvider>().addToCart(
+      request, 
+      widget.product.id
     );
 
     if (context.mounted) {
-      if (response['ok'] == true) {
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("${widget.product.name} added to cart!"),
@@ -43,8 +43,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message'] ?? "Failed to add"),
+          const SnackBar(
+            content: Text("Failed to add to cart"),
             backgroundColor: Colors.red,
           ),
         );
@@ -66,18 +66,31 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.arrow_back, color: LumeColors.darkText),
-          ),
-          onPressed: () => Navigator.pop(context),
+          // ... (kode icon back Anda)
+          onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back),
         ),
+        // TAMBAHKAN ACTION UNTUK BADGE CART
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Consumer<CartProvider>(
+              builder: (context, cartProvider, child) {
+                return Badge(
+                  label: Text(cartProvider.cartCount.toString()),
+                  isLabelVisible: cartProvider.cartCount > 0,
+                  child: IconButton(
+                    icon: const Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText),
+                    onPressed: () {
+                        // Navigasi ke Cart Page
+                        // Navigator.push(...); 
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
-      extendBodyBehindAppBar: true,
 
       body: Column(
         children: [
