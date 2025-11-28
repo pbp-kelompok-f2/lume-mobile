@@ -28,7 +28,7 @@ class ProductCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Material( 
+      child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -41,55 +41,52 @@ class ProductCard extends StatelessWidget {
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(14.0),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header: Nama (Tanpa Icon Love)
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        product.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E252B),
-                        ),
-                      ),
-                    ),
-                    // Icon Love SUDAH DIHAPUS dari sini
-                  ],
+                // Header: Nama Produk (1 Baris + Ellipsis biar rapi)
+                Text(
+                  product.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E252B),
+                  ),
                 ),
+                
                 const SizedBox(height: 12),
 
-                // Gambar Tengah
-                Expanded(
+                // --- BAGIAN FOTO (FIXED SIZE) ---
+                // Menggunakan AspectRatio agar semua foto ukurannya SAMA (Kotak 1:1)
+                AspectRatio(
+                  aspectRatio: 1.0, // Rasio 1:1 (Kotak). Ubah jadi 0.8 jika ingin agak tinggi (portrait).
                   child: Stack(
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           width: double.infinity,
-                          color: const Color(0xFFEBE8DF),
+                          height: double.infinity,
+                          color: const Color(0xFFEBE8DF), // Warna placeholder saat loading
                           child: product.thumbnail.isNotEmpty
                               ? Image.network(
                                   product.thumbnail,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.cover, // KUNCI: Gambar mengisi penuh kotak, crop jika perlu
                                   errorBuilder: (ctx, error, stackTrace) =>
-                                      const Center(child: Icon(Icons.image_not_supported, color: Colors.white, size: 40)),
+                                      const Center(child: Icon(Icons.image_not_supported, color: Colors.white, size: 30)),
                                 )
-                              : const Center(child: Icon(Icons.photo, color: Colors.white, size: 48)),
+                              : const Center(child: Icon(Icons.photo, color: Colors.white, size: 30)),
                         ),
                       ),
-                      // Best Seller Tag
+                      // Tag Best Seller
                       Positioned(
                         bottom: 8,
                         left: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: const Color(0xFF8E9388),
                             borderRadius: BorderRadius.circular(6),
@@ -103,20 +100,30 @@ class ProductCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                // ---------------------------------
 
-                // Footer: Harga & Tombol
+                const Spacer(), // Dorong elemen bawah ke dasar kartu
+
+                const SizedBox(height: 8),
+
+                // Footer: Harga & Tombol Cart
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      currencyFormatter.format(product.price),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E252B),
+                    Expanded(
+                      child: Text(
+                        currencyFormatter.format(product.price),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E252B),
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 4),
+                    // Tombol Cart Kecil
                     InkWell(
                       onTap: () {
                          ScaffoldMessenger.of(context).showSnackBar(
@@ -124,21 +131,12 @@ class ProductCard extends StatelessWidget {
                          );
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.all(8), // Icon only biar muat
                         decoration: BoxDecoration(
                           color: const Color(0xFFA8AF9F),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.shopping_cart_outlined, size: 16, color: Colors.white),
-                            SizedBox(width: 4),
-                            Text(
-                              "Add to Cart",
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
-                            ),
-                          ],
-                        ),
+                        child: const Icon(Icons.shopping_cart_outlined, size: 16, color: Colors.white),
                       ),
                     )
                   ],
