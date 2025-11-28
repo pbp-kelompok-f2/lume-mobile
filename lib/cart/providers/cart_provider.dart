@@ -22,7 +22,7 @@ class CartProvider extends ChangeNotifier {
     // GANTI URL sesuai device:
     // Android Emulator: 10.0.2.2
     // iOS / Web: 127.0.0.1
-    String baseUrl = "http://localhost:8000/"; 
+    String baseUrl = "http://127.0.0.1:8000"; 
     
     try {
       final response = await request.get('$baseUrl/cart/api/get-cart/');
@@ -42,7 +42,7 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<bool> addToCart(CookieRequest request, String productId) async { 
-    String baseUrl = "http://localhost:8000/"; // Sesuaikan URL
+    String baseUrl = "http://127.0.0.1:8000"; // Sesuaikan URL
 
     final response = await request.postJson(
       "$baseUrl/cart/flutter/add/",
