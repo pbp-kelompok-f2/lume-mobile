@@ -94,7 +94,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
 
     try {
       final response = await request.get(
-        'http://localhost:8000/catalog/api/products/?limit=$_limit&offset=$_offset',
+        'http://127.0.0.1:8000/catalog/api/products/?limit=$_limit&offset=$_offset',
       );
       
       List<Product> newItems = [];
@@ -124,7 +124,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
       final request = context.read<CookieRequest>();
       try {
         final response = await request.get(
-          'http://localhost:8000/catalog/api/products/?limit=1000',
+          'http://127.0.0.1:8000/catalog/api/products/?limit=1000',
         );
         List<Product> list = [];
         if (response['results'] != null) {

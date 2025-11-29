@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lume_mobile/cart/providers/cart_provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
@@ -31,19 +32,42 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const Icon(Icons.spa, size: 80, color: LumeColors.darkGreen),
               const SizedBox(height: 20),
-              const Text("Welcome Back", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: LumeColors.darkText)),
+              const Text(
+                "Welcome Back",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: LumeColors.darkText,
+                ),
+              ),
               const SizedBox(height: 40),
-              
+
               TextField(
                 controller: _usernameController,
-                decoration: InputDecoration(labelText: "Username", filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                decoration: InputDecoration(
+                  labelText: "Username",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
-              
+
               TextField(
                 controller: _passwordController,
                 obscureText: true,
-                decoration: InputDecoration(labelText: "Password", filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -51,58 +75,118 @@ class _LoginPageState extends State<LoginPage> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : () async {
-                    setState(() => _isLoading = true);
-                    String username = _usernameController.text;
-                    String password = _passwordController.text;
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          setState(() => _isLoading = true);
+                          String username = _usernameController.text;
+                          String password = _passwordController.text;
 
-                    // GANTI URL:
-                    // Android Emulator: http://10.0.2.2:8000/user/login/
-                    // Chrome / iOS: http://127.0.0.1:8000/user/login/
-                    final response = await request.login("http://127.0.0.1:8000/user/api/login/", {
-                      'username': username,
-                      'password': password,
-                      'ajax': '1', // <--- TAMBAHKAN BARIS INI WAJIB!
-                    });
+                          // GANTI URL:P
+                          // Android Emulator: http://10.0.2.2:8000/user/login/
+                          // Chrome / iOS: http://127.0.0.1:8000/user/login/
+                          final response = await request.login(
+                            "http://127.0.0.1:8000/user/api/login/",
+                            {
+                              'username': username,
+                              'password': password,
+                              'ajax': '1', // <--- TAMBAHKAN BARIS INI WAJIB!
+                            },
+                          );
 
-                    if (request.loggedIn) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Login successful!"), backgroundColor: LumeColors.sageGreen));
+                          if (request.loggedIn) {
+                            if (context.mounted) {
+                              final cartProvider = context.read<CartProvider>();
 
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const MainScaffold()),
-                        );
-                      }
-                    } else {
-                      if (context.mounted) {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Login Failed'),
-                            content: Text(response['message'] ?? "Invalid credentials"),
-                            actions: [TextButton(child: const Text('OK'), onPressed: () => Navigator.pop(context))],
+                              try {
+                                // 2. Refresh CartProvider (membuatnya siap digunakan)
+                                await cartProvider.fetchCart(request);
+                              } catch (e) {
+                                // Ini akan menangani FormatException jika API lain gagal
+                                debugPrint("Error on post-login sync: $e");
+                              }
+                            }
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Login successful!"),
+                                  backgroundColor: LumeColors.sageGreen,
+                                ),
+                              );
+
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const MainScaffold(),
+                                ),
+                              );
+                            }
+                          } else {
+                            if (context.mounted) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Login Failed'),
+                                  content: Text(
+                                    response['message'] ??
+                                        "Invalid credentials",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      child: const Text('OK'),
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          }
+                          setState(() => _isLoading = false);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: LumeColors.darkGreen,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Log In",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      }
-                    }
-                    setState(() => _isLoading = false);
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: LumeColors.darkGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("Log In", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have an account? ", style: TextStyle(color: LumeColors.mutedText)),
+                  const Text(
+                    "Don't have an account? ",
+                    style: TextStyle(color: LumeColors.mutedText),
+                  ),
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterPage()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterPage(),
+                        ),
+                      );
                     },
-                    child: const Text("Sign Up", style: TextStyle(color: LumeColors.darkGreen, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      "Sign Up",
+                      style: TextStyle(
+                        color: LumeColors.darkGreen,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),

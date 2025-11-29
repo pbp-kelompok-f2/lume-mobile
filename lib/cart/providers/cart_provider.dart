@@ -17,28 +17,39 @@ class CartProvider extends ChangeNotifier {
 
   Future<void> fetchCart(CookieRequest request) async {
     _isLoading = true;
-    // notifyListeners(); // Opsional, jika ingin loading spinner muncul realtime
-
-    // GANTI URL sesuai device:
-    // Android Emulator: 10.0.2.2
-    // iOS / Web: 127.0.0.1
-    String baseUrl = "http://127.0.0.1:8000"; 
+    
+    // Pastikan host ini konsisten di seluruh aplikasi
+    const String baseUrl = "http://127.0.0.1:8000"; 
     
     try {
-      final response = await request.get('$baseUrl/cart/api/get-cart/');
+      final response = await request.get('$baseUrl/cart/flutter/list/');
+      
       List<CartItem> items = [];
-      for (var d in response) {
-        if (d != null) {
-          items.add(CartItem.fromJson(d));
-        }
+      
+      // KOREKSI UTAMA: Cek jika respons adalah Map (yang benar)
+      if (response is Map && response.containsKey('ok')) {
+          
+          // Hanya proses jika server merespons 200 OK dan flag 'ok' adalah true
+          if (response['ok'] == true && response.containsKey('items') && response['items'] is Iterable) {
+              
+              // Sekarang iterasi pada list yang benar: response['items']
+              for (var d in response['items']) { 
+                if (d != null) {
+                  items.add(CartItem.fromJson(d));
+                }
+              }
+          }
       }
+      
       _cartItems = items;
+      
     } catch (e) {
-      print("Error fetching cart: $e");
+      // Ini akan menangkap error FormatException atau koneksi
+      debugPrint("Error fetching cart: $e");
     }
 
     _isLoading = false;
-    notifyListeners(); // Memberitahu semua widget (Badge/CartPage) untuk rebuild
+    notifyListeners(); 
   }
 
   Future<bool> addToCart(CookieRequest request, String productId) async { 
