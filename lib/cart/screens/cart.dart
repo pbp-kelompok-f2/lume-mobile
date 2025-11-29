@@ -18,7 +18,7 @@ class _CartPageState extends State<CartPage> {
   bool _isLoading = true;
 
   // Sesuaikan URL backend
-  final String baseUrl = "http://localhost:8000";
+  final String baseUrl = "http://127.0.0.1:8000";
 
   @override
   void initState() {
