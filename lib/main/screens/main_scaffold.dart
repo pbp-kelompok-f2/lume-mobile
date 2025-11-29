@@ -3,7 +3,7 @@ import 'package:lume_mobile/catalog/screens/product_entry_page.dart';
 import 'package:lume_mobile/home/screens/home_page.dart';
 import 'package:lume_mobile/profile/screens/profile_page.dart'; 
 import 'package:lume_mobile/theme/lume_colors.dart';
-import 'package:lume_mobile/cart/providers/cart_provider.dart';
+import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 

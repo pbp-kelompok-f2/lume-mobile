@@ -5,7 +5,7 @@ import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:lume_mobile/cart/providers/cart_provider.dart';
+import 'package:lume_mobile/providers/cart_provider.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
