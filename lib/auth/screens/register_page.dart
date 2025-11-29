@@ -50,7 +50,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   onPressed: _isLoading ? null : () async {
                     setState(() => _isLoading = true);
                     final response = await request.postJson(
-                      "http://127.0.0.1:8000/user/register/",
+                      "http://loclahost:8000/user/register/",
                       jsonEncode({
                         'username': _usernameController.text,
                         'password': _passwordController.text,

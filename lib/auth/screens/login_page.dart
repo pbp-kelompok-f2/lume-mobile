@@ -86,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
                           // Android Emulator: http://10.0.2.2:8000/user/login/
                           // Chrome / iOS: http://127.0.0.1:8000/user/login/
                           final response = await request.login(
-                            "http://127.0.0.1:8000/user/api/login/",
+                            "http://localhost:8000/user/api/login/",
                             {
                               'username': username,
                               'password': password,
@@ -94,20 +94,14 @@ class _LoginPageState extends State<LoginPage> {
                             },
                           );
 
-                          if (request.loggedIn) {
+                          // 🔑 PERBAIKAN 1: Cek status login dari respons JSON
+                          // Cek jika login berhasil. Respon dari Django user/api.py
+                          // harusnya memiliki {'ok': True}
+                          if (response.containsKey('ok') && response['ok'] == true) {
                             if (context.mounted) {
-                              final cartProvider = context.read<CartProvider>();
-
-                              try {
-                                // 2. Refresh CartProvider (membuatnya siap digunakan)
-                                await cartProvider.fetchCart(request);
-                              } catch (e) {
-                                // Ini akan menangani FormatException jika API lain gagal
-                                debugPrint("Error on post-login sync: $e");
-                              }
-                            }
-
-                            if (context.mounted) {
+                              
+                              
+                              // Tampilkan Snackbar
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text("Login successful!"),
@@ -115,6 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               );
 
+                              // Navigasi
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(

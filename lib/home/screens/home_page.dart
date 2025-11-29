@@ -22,7 +22,7 @@ class _HomePageState extends State<HomePage> {
 
   // ... (kode fetchFeaturedProducts tetap sama) ...
   Future<List<Product>> fetchFeaturedProducts(CookieRequest request) async {
-    final response = await request.get('http://127.0.0.1:8000/catalog/api/products/?limit=5');
+    final response = await request.get('http://localhost:8000/catalog/api/products/?limit=5');
     var data = response;
     List<Product> listProduct = [];
     for (var d in data['results']) {
