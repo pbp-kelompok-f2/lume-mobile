@@ -32,7 +32,7 @@ class _AppProductCardState extends State<AppProductCard> {
     // 2. Kirim Request ke Server (Background)
     // Jangan pakai await di sini agar animasi langsung jalan mulus
     request.postJson(
-      "http://127.0.0.1:8000/cart/flutter/add/", 
+      "http://localhost:8000/cart/flutter/add/", 
       jsonEncode(<String, dynamic>{
         'product_id': widget.product.id,
         'quantity': 1,
