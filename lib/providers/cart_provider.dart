@@ -6,14 +6,12 @@ import 'package:lume_mobile/models/cart_items.dart'; // Sesuaikan import model A
 class CartProvider extends ChangeNotifier {
   List<CartItem> _cartItems = [];
   bool _isLoading = false;
+  int _counter = 0;
+  int get counter => _counter;
 
   List<CartItem> get cartItems => _cartItems;
   bool get isLoading => _isLoading;
 
-  // Getter untuk menghitung total item (untuk Badge)
-  int get cartCount => _cartItems.length; 
-  // Atau jika ingin menghitung berdasarkan quantity:
-  // int get cartCount => _cartItems.fold(0, (sum, item) => sum + item.quantity);
 
   Future<void> fetchCart(CookieRequest request) async {
     _isLoading = true;
@@ -58,6 +56,21 @@ class CartProvider extends ChangeNotifier {
       return true;
     } else {
       return false;
+    }
+  }
+
+  Future<void> fetchCartCount(CookieRequest request) async {
+    String baseUrl = "http://localhost:8000";
+    try {
+      // Panggil endpoint list untuk dapat total_items
+      final response = await request.get('$baseUrl/cart/flutter/list/');
+      
+      if (response != null && response['ok'] == true) {
+        _counter = response['total_items'] ?? 0;
+        notifyListeners(); // Kabari semua widget yang dengar
+      }
+    } catch (e) {
+      print("Gagal ambil jumlah cart: $e");
     }
   }
 }

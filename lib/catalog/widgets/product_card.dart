@@ -4,11 +4,12 @@ import 'package:intl/intl.dart';
 import 'package:lume_mobile/catalog/screens/product_detail_page.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert'; // Untuk jsonEncode
+import 'package:lume_mobile/providers/cart_provider.dart'; // Pastikan import provider
+import 'dart:convert';
 
 class AppProductCard extends StatefulWidget {
   final Product product;
-  final Function(GlobalKey) runAnimation; // Terima fungsi dari parent
+  final Function(GlobalKey) runAnimation; 
 
   const AppProductCard({
     super.key, 
@@ -21,33 +22,51 @@ class AppProductCard extends StatefulWidget {
 }
 
 class _AppProductCardState extends State<AppProductCard> {
-  // Key untuk gambar produk ini
   final GlobalKey widgetKey = GlobalKey(); 
 
-  // Fungsi Add to Cart + Animasi
   void _handleAddToCart(CookieRequest request) async {
-    // 1. Jalankan Animasi Dulu (Visual Feedback)
-    widget.runAnimation(widgetKey);
+    // Hapus animasi dari sini, kita pindahkan ke bawah setelah request sukses
+    
+    // Kirim Request ke Server
+    try {
+      final response = await request.postJson(
+        "http://localhost:8000/cart/flutter/add/", // Ganti 10.0.2.2 jika emulator
+        jsonEncode(<String, dynamic>{
+          'product_id': widget.product.id,
+          'quantity': 1,
+        }),
+      );
 
-    // 2. Kirim Request ke Server (Background)
-    // Jangan pakai await di sini agar animasi langsung jalan mulus
-    request.postJson(
-      "http://localhost:8000/cart/flutter/add/", 
-      jsonEncode(<String, dynamic>{
-        'product_id': widget.product.id,
-        'quantity': 1,
-      }),
-    ).then((response) {
       if (mounted) {
         if (response['ok'] == true) {
-          // Sukses (Optional: Update badge cart)
+          // --- SUKSES: BARU JALANKAN ANIMASI ---
+          widget.runAnimation(widgetKey);
+          
+          // Update badge cart
+          context.read<CartProvider>().fetchCartCount(request);
+
+          // Optional: Hapus snackbar success jika animasi sudah cukup mewakili
+          // atau biarkan tetap ada sebagai konfirmasi teks
+          /* ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Added to cart"), duration: Duration(seconds: 1)),
+          ); */
         } else {
+          // --- GAGAL: TAMPILKAN ERROR (TANPA ANIMASI) ---
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? "Failed"), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(response['message'] ?? "Failed to add"), 
+              backgroundColor: Colors.red
+            ),
           );
         }
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
@@ -92,11 +111,11 @@ class _AppProductCardState extends State<AppProductCard> {
                 ),
                 const SizedBox(height: 12),
 
-                // --- BAGIAN FOTO ---
+                // --- BAGIAN FOTO (Key Animasi di sini) ---
                 AspectRatio(
                   aspectRatio: 1.0, 
                   child: Container(
-                    key: widgetKey, // TEMPEL KEY DI SINI (Sumber Animasi)
+                    key: widgetKey, // SUMBER ANIMASI
                     width: double.infinity,
                     child: Stack(
                       children: [
@@ -111,7 +130,6 @@ class _AppProductCardState extends State<AppProductCard> {
                                 )
                               : const Center(child: Icon(Icons.photo)),
                         ),
-                        // ... (Best seller tag) ...
                       ],
                     ),
                   ),
@@ -134,9 +152,9 @@ class _AppProductCardState extends State<AppProductCard> {
                     ),
                     const SizedBox(width: 4),
                     
-                    // --- TOMBOL ADD TO CART ---
+                    // Tombol Add to Cart
                     InkWell(
-                      onTap: () => _handleAddToCart(request), // Panggil Fungsi
+                      onTap: () => _handleAddToCart(request),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(

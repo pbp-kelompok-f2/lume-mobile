@@ -19,7 +19,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final NumberFormat currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   Future<List<OrderHistory>> fetchOrderHistory(CookieRequest request) async {
-    final response = await request.get('http://127.0.0.1:8000/checkout/json/');
+    final response = await request.get('http://localhost:8000/checkout/json/');
     List<OrderHistory> listOrder = [];
     for (var d in response) {
       if (d != null) listOrder.add(OrderHistory.fromJson(d));
@@ -28,7 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<List<BookingHistory>> fetchBookingHistory(CookieRequest request) async {
-    final response = await request.get('http://127.0.0.1:8000/bookingkelas/json/');
+    final response = await request.get('http://localhost:8000/bookingkelas/json/');
     List<BookingHistory> listBooking = [];
     for (var d in response) {
       if (d != null) listBooking.add(BookingHistory.fromJson(d));
@@ -101,7 +101,7 @@ SizedBox(
               height: 55,
               child: ElevatedButton(
                 onPressed: () async {
-                  final response = await request.logout("http://127.0.0.1:8000/user/logout/");
+                  final response = await request.logout("http://localhost:8000/user/logout/");
                   if (response['status']) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Successfully logged out!")));
