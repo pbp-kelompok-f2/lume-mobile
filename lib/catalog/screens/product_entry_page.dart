@@ -7,6 +7,7 @@ import 'package:lume_mobile/catalog/widgets/product_card.dart';
 import 'package:lume_mobile/cart/screens/cart.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
 class ProductEntryPage extends StatefulWidget {
@@ -65,6 +66,8 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPagedProducts(refresh: true);
+      // FETCH CART DI AWAL
+      context.read<CartProvider>().fetchCartCount(context.read<CookieRequest>());
     });
   }
 
@@ -93,6 +96,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
     }
 
     try {
+      // Gunakan 10.0.2.2 untuk Emulator Android
       final response = await request.get(
         'http://localhost:8000/catalog/api/products/?limit=$_limit&offset=$_offset',
       );
@@ -284,11 +288,9 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
       height: 30,
       width: 30,
       opacity: 0.85,
-      // --- UPDATE DI SINI: Matikan Rotasi ---
       dragAnimation: const DragToCartAnimationOptions(
-        rotation: false, // Tidak berputar, cuma terbang biasa
+        rotation: false, // Animasi terbang lurus (tanpa putar)
       ),
-      // --------------------------------------
       jumpAnimation: const JumpAnimationOptions(),
       createAddToCartAnimation: (runAddToCartAnimation) {
         this.runAddToCartAnimation = runAddToCartAnimation;
@@ -335,20 +337,50 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                   ),
                   const SizedBox(width: 12),
                   
-                  // --- CART ICON (Target Animasi) ---
+                  // --- CART ICON DENGAN BADGE HIJAU & LOGIKA 0 ---
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const CartPage()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CartPage()),
+                      ).then((_) {
+                        context.read<CartProvider>().fetchCartCount(context.read<CookieRequest>());
+                      });
                     },
                     child: AddToCartIcon(
                       key: cartKey,
-                      icon: Container(
-                        height: 48, width: 48,
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
-                        child: const Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText),
+                      icon: Consumer<CartProvider>(
+                        builder: (context, cartProvider, child) {
+                          // Ikon Keranjang Dasar
+                          Widget cartIcon = Container(
+                            height: 48, width: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white, 
+                              borderRadius: BorderRadius.circular(12), 
+                              border: Border.all(color: Colors.grey.shade300)
+                            ),
+                            child: const Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText),
+                          );
+
+                          // Jika counter > 0, bungkus dengan Badge
+                          if (cartProvider.counter > 0) {
+                            return Badge(
+                              label: Text(
+                                "${cartProvider.counter}",
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: LumeColors.darkGreen, // Warna Hijau
+                              child: cartIcon,
+                            );
+                          }
+                          
+                          // Jika 0, tampilkan ikon polos saja
+                          return cartIcon;
+                        },
                       ),
                     ),
                   ),
+                  // ----------------------------------------------
                 ],
               ),
             ),

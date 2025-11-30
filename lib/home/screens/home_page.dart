@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/catalog/widgets/product_card.dart';
 import 'package:lume_mobile/home/widgets/home_banner.dart';
+import 'package:lume_mobile/providers/user_provider.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -18,9 +19,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String username = "Myscha";
 
-  // ... (kode fetchFeaturedProducts tetap sama) ...
   Future<List<Product>> fetchFeaturedProducts(CookieRequest request) async {
     final response = await request.get('http://localhost:8000/catalog/api/products/?limit=5');
     var data = response;
@@ -34,7 +33,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
-
+    final userProvider = context.watch<UserProvider>(); 
+    final String username = userProvider.username;
+    
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
       body: SafeArea(

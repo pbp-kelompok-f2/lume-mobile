@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
+import 'package:lume_mobile/providers/user_provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
@@ -99,8 +100,8 @@ class _LoginPageState extends State<LoginPage> {
                           // harusnya memiliki {'ok': True}
                           if (response.containsKey('ok') && response['ok'] == true) {
                             if (context.mounted) {
-                              
-                              
+                              String user = response['username'] ?? username; // Ambil dari JSON Django
+                              context.read<UserProvider>().setUsername(user);
                               // Tampilkan Snackbar
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
