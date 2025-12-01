@@ -6,6 +6,7 @@ import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:lume_mobile/booking_kelas/screens/class_list_page.dart';
 
 class MainScaffold extends StatefulWidget {
   // Parameter opsional untuk menentukan tab awal
@@ -63,7 +64,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         onNavigateTo: (index) => _onItemTapped(index),
       ),
       const ProductEntryPage(),   
-      const Center(child: Text("Classes (Coming Soon)")), 
+      const ClassListPage(), 
       const ProfilePage(), 
     ];
 
