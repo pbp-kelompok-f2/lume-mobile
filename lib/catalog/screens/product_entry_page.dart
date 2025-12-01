@@ -66,10 +66,12 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPagedProducts(refresh: true);
-      // FETCH CART DI AWAL
-      context.read<CartProvider>().fetchCartCount(
-        context.read<CookieRequest>(),
-      );
+
+      // ✅ HANYA FETCH CART COUNT KALAU SUDAH LOGIN
+      final req = context.read<CookieRequest>();
+      if (req.loggedIn) {
+        context.read<CartProvider>().fetchCartCount(req);
+      }
     });
   }
 
@@ -98,7 +100,6 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
     }
 
     try {
-      // Gunakan 10.0.2.2 untuk Emulator Android
       final response = await request.get(
         'http://localhost:8000/catalog/api/products/?limit=$_limit&offset=$_offset',
       );
@@ -171,11 +172,12 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
         break;
     }
 
-    if (mounted)
+    if (mounted) {
       setState(() {
         _displayedProducts = results;
         _isLoading = false;
       });
+    }
   }
 
   void _onSearchChanged(String query) {
@@ -375,13 +377,15 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
   // --- BUILD UTAMA ---
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>(); // 🔎 dipakai untuk cek loggedIn
+
     return AddToCartAnimation(
       cartKey: cartKey,
       height: 30,
       width: 30,
       opacity: 0.85,
       dragAnimation: const DragToCartAnimationOptions(
-        rotation: false, // Animasi terbang lurus (tanpa putar)
+        rotation: false,
       ),
       jumpAnimation: const JumpAnimationOptions(),
       createAddToCartAnimation: (runAddToCartAnimation) {
@@ -450,7 +454,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                   ),
                   const SizedBox(width: 12),
 
-                  // --- CART ICON DENGAN BADGE HIJAU & LOGIKA 0 ---
+                  // --- CART ICON DENGAN BADGE (cek login + counter) ---
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -459,16 +463,19 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                           builder: (context) => const CartPage(),
                         ),
                       ).then((_) {
-                        context.read<CartProvider>().fetchCartCount(
-                          context.read<CookieRequest>(),
-                        );
+                        final req = context.read<CookieRequest>();
+                        if (req.loggedIn) {
+                          context
+                              .read<CartProvider>()
+                              .fetchCartCount(req);
+                        }
                       });
                     },
                     child: AddToCartIcon(
                       key: cartKey,
                       badgeOptions: const BadgeOptions(
                         active:
-                            false, // Disable the built-in badge from add_to_cart_animation
+                            false, // disable bawaan badge dari add_to_cart_animation
                       ),
                       icon: Consumer<CartProvider>(
                         builder: (context, cartProvider, child) {
@@ -487,25 +494,25 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                             ),
                           );
 
-                          // Only show badge if counter > 0
-                          if (cartProvider.counter > 0) {
-                            return Badge(
-                              label: Text(
-                                "${cartProvider.counter}",
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              backgroundColor: LumeColors.darkGreen,
-                              child: cartIcon,
-                            );
+                          // ❗ Kalau belum login ATAU counter 0 → icon polos
+                          if (!request.loggedIn ||
+                              cartProvider.counter <= 0) {
+                            return cartIcon;
                           }
 
-                          // Return plain icon when counter is 0
-                          return cartIcon;
+                          // ✅ Login + counter > 0 → badge hijau
+                          return Badge(
+                            label: Text(
+                              "${cartProvider.counter}",
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: LumeColors.darkGreen,
+                            child: cartIcon,
+                          );
                         },
                       ),
                     ),
                   ),
-                  // ----------------------------------------------
                 ],
               ),
             ),
@@ -515,39 +522,39 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _displayedProducts.isEmpty
-                  ? Center(
-                      child: Text(
-                        "No products found.",
-                        style: GoogleFonts.inter(color: Colors.grey),
-                      ),
-                    )
-                  : GridView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(20),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                      ? Center(
+                          child: Text(
+                            "No products found.",
+                            style: GoogleFonts.inter(color: Colors.grey),
+                          ),
+                        )
+                      : GridView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.all(20),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                             childAspectRatio: 0.7,
                           ),
-                      itemCount:
-                          _displayedProducts.length + (_isLoadingMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _displayedProducts.length) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        }
-                        return AppProductCard(
-                          product: _displayedProducts[index],
-                          runAnimation: runAddToCartAnimation,
-                        );
-                      },
-                    ),
+                          itemCount: _displayedProducts.length +
+                              (_isLoadingMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == _displayedProducts.length) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+                            return AppProductCard(
+                              product: _displayedProducts[index],
+                              runAnimation: runAddToCartAnimation,
+                            );
+                          },
+                        ),
             ),
           ],
         ),

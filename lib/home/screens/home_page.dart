@@ -8,7 +8,6 @@ import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
-// ⬇️ tambahin ini
 import 'package:lume_mobile/cart/screens/cart.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
 
@@ -24,8 +23,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Future<List<Product>> fetchFeaturedProducts(CookieRequest request) async {
-    final response = await request
-        .get('http://localhost:8000/catalog/api/products/?limit=5');
+    final response =
+        await request.get('http://localhost:8000/catalog/api/products/?limit=5');
     var data = response;
     List<Product> listProduct = [];
     for (var d in data['results']) {
@@ -55,6 +54,7 @@ class _HomePageState extends State<HomePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // Greeting kiri (tetap)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -77,7 +77,7 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
 
-                    // ⬇️ GANTI PROFILE ICON → CART ICON + BADGE
+                    // === CART ICON KANAN ATAS ===
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -111,20 +111,20 @@ class _HomePageState extends State<HomePage> {
                             ),
                           );
 
-                          // kalau count > 0 → bungkus dengan Badge hijau
-                          if (cartProvider.counter > 0) {
-                            return Badge(
-                              label: Text(
-                                '${cartProvider.counter}',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              backgroundColor: LumeColors.darkGreen,
-                              child: cartIcon,
-                            );
+                          // ❗ KALAU BELUM LOGIN atau COUNTER 0 → icon polos saja
+                          if (!request.loggedIn || cartProvider.counter <= 0) {
+                            return cartIcon;
                           }
 
-                          // kalau 0 → icon polos
-                          return cartIcon;
+                          // ✅ LOGIN + ADA ITEM → bungkus dengan badge hijau
+                          return Badge(
+                            label: Text(
+                              '${cartProvider.counter}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: LumeColors.darkGreen,
+                            child: cartIcon,
+                          );
                         },
                       ),
                     ),
@@ -141,10 +141,14 @@ class _HomePageState extends State<HomePage> {
                 ),
 
                 const SizedBox(height: 32),
+
+                // === FEATURED PRODUCTS SECTION ===
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 14),
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
                   decoration: const BoxDecoration(
                     color: Color(0xFFA3A89D),
                     borderRadius: BorderRadius.only(
