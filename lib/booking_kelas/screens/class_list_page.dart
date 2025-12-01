@@ -4,12 +4,19 @@ import 'package:lume_mobile/models/booking_kelas.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
-// Model bantuan untuk menampung data sesi + map hari (khusus daily)
+// Model bantuan untuk menampung data sesi yang sudah di-grouping
 class ProcessedSession {
-  final ClassSession session;
-  final Map<String, int>? dailyMap; // Map Hari -> ID Sesi
+  final ClassSession session; // Instance representatif (biasanya yang pertama)
+  final String baseTitle;
+  final Map<String, int> dailyMap; // Map Nama Hari -> ID Sesi (Untuk Daily)
+  final Set<String> daysNames; // List nama hari untuk ditampilkan (Badge)
 
-  ProcessedSession(this.session, {this.dailyMap});
+  ProcessedSession({
+    required this.session,
+    required this.baseTitle,
+    required this.dailyMap,
+    required this.daysNames,
+  });
 }
 
 class ClassListPage extends StatefulWidget {
@@ -21,76 +28,88 @@ class ClassListPage extends StatefulWidget {
 
 class _ClassListPageState extends State<ClassListPage> {
   
+  // Helper: Mapping angka string '0'-'6' ke Nama Hari (Sesuai views.py)
+  String _getDayName(String dayCode) {
+    const map = {
+      '0': 'Monday', '1': 'Tuesday', '2': 'Wednesday', 
+      '3': 'Thursday', '4': 'Friday', '5': 'Saturday', '6': 'Sunday'
+    };
+    // Jika backend kirim 'Monday' langsung, kembalikan 'Monday'. Jika '0', kembalikan 'Monday'.
+    return map[dayCode] ?? dayCode; 
+  }
+
+  // Helper: Membersihkan judul (Sesuai views.py _base_title)
+  // Misal: "Pilates - Rp50.000" -> "Pilates"
+  String _baseTitle(String title) {
+    if (title.contains(' - ')) {
+      return title.split(' - ').first;
+    }
+    return title;
+  }
+
   Future<List<ProcessedSession>> fetchAndProcessClasses(CookieRequest request) async {
-    // 1. Fetch RAW data (Semua sesi)
-    final response = await request.get('http://10.0.2.2:8000/bookingkelas/json/');
-    List<ClassSession> allSessions = [];
+    // Sesuaikan URL (localhost untuk simulator, 10.0.2.2 untuk emulator Android)
+    final response = await request.get('http://127.0.0.1:8000/bookingkelas/json/');
     
+    List<ClassSession> allSessions = [];
     if (response is List) {
       for (var d in response) { if (d != null) allSessions.add(ClassSession.fromJson(d)); }
     } else if (response is Map && response['sessions'] != null) {
       for (var d in response['sessions']) { if (d != null) allSessions.add(ClassSession.fromJson(d)); }
     }
 
-    // 2. GROUPING LOGIC
-    // Kita ingin hasil akhir maksimal 5 item:
-    // Daily 1, Daily 2, Daily 3, Weekly 1, Weekly 2.
-    
-    // Map untuk menampung grup. Key unik bisa berupa string.
+    // --- LOGIKA GROUPING (MIRIP VIEWS.PY CATALOG) ---
+    // Key Grouping: (Base Title, Time, Category)
     Map<String, ProcessedSession> groups = {};
 
     for (var s in allSessions) {
-      bool isDaily = s.category.toLowerCase().contains('daily');
-      
-      if (isDaily) {
-        // --- LOGIKA DAILY ---
-        // Kelompokkan berdasarkan JAM (Time). 
-        // Semua sesi daily di jam 10.00 akan masuk satu grup, bedanya cuma di 'days'.
-        String key = "DAILY_${s.time}"; 
-        
-        if (!groups.containsKey(key)) {
-          // Buat entri baru, inisialisasi Map
-          groups[key] = ProcessedSession(s, dailyMap: {});
-        }
-        
-        // Masukkan ID sesi ini ke dalam Map berdasarkan harinya
-        // Asumsi s.days berisi list string angka ["0"] atau ["1"]
-        if (s.days.isNotEmpty) {
-           groups[key]!.dailyMap![s.days.first] = s.id;
-        }
-        
-      } else {
-        // --- LOGIKA WEEKLY ---
-        // Kelompokkan berdasarkan Pola Hari.
-        // Weekly (Senin,Rabu,Jumat) vs Weekly (Selasa,Kamis,Sabtu)
-        // Kita jadikan list hari string sebagai key unik.
-        String dayPattern = s.days.join('_'); 
-        String key = "WEEKLY_$dayPattern";
+      String base = _baseTitle(s.title);
+      // Buat key unik gabungan
+      String groupKey = "${base}_${s.time}_${s.category}";
 
-        if (!groups.containsKey(key)) {
-          groups[key] = ProcessedSession(s); // Weekly tidak butuh dailyMap
+      // Konversi list days code (["0"]) jadi list nama hari (["Monday"])
+      List<String> currentDayNames = s.days.map((d) => _getDayName(d.toString())).toList();
+
+      if (!groups.containsKey(groupKey)) {
+        // Inisialisasi Group Baru
+        groups[groupKey] = ProcessedSession(
+          session: s, // Simpan instance ini sebagai wakil untuk harga, deskripsi, dll
+          baseTitle: base,
+          dailyMap: {},
+          daysNames: {},
+        );
+      }
+
+      // Update Group Data
+      final group = groups[groupKey]!;
+      
+      // 1. Tambahkan Nama Hari ke Set (agar unik dan terkumpul)
+      group.daysNames.addAll(currentDayNames);
+
+      // 2. Jika Daily, mapping Hari -> ID untuk keperluan Modal
+      if (s.category.toLowerCase() == 'daily') {
+        // Asumsi Daily per row cuma punya 1 hari, tapi kita loop jg utk aman
+        for (var dayName in currentDayNames) {
+           group.dailyMap[dayName] = s.id;
         }
+      } else {
+        // Jika Weekly, ID nya pakai instance ini (biasanya weekly 1 row = banyak hari)
+        // Kita bisa pakai ID sesi representative saat booking nanti.
       }
     }
 
-    // 3. Konversi Map ke List dan SORTING
+    // Konversi ke List dan Sorting
     List<ProcessedSession> result = groups.values.toList();
-
-    // Custom Sort: Daily dulu (berdasarkan jam), baru Weekly
+    
+    // Sort: Category -> Time -> BaseTitle (Sesuai views.py)
     result.sort((a, b) {
-      bool aDaily = a.session.category.toLowerCase().contains('daily');
-      bool bDaily = b.session.category.toLowerCase().contains('daily');
+      int catCmp = a.session.category.compareTo(b.session.category);
+      if (catCmp != 0) return catCmp;
+      
+      int timeCmp = a.session.time.compareTo(b.session.time);
+      if (timeCmp != 0) return timeCmp;
 
-      if (aDaily && !bDaily) return -1; // A Daily, B Weekly -> A dulu
-      if (!aDaily && bDaily) return 1;  // A Weekly, B Daily -> B dulu
-      
-      // Jika sama-sama Daily, urutkan berdasarkan Jam (String sort works for '10.00' vs '16.00')
-      if (aDaily && bDaily) {
-        return a.session.time.compareTo(b.session.time);
-      }
-      
-      // Jika sama-sama Weekly, urutkan berdasarkan Title atau ID
-      return a.session.title.compareTo(b.session.title);
+      return a.baseTitle.compareTo(b.baseTitle);
     });
 
     return result;
@@ -132,7 +151,9 @@ class _ClassListPageState extends State<ClassListPage> {
                   final item = snapshot.data![index];
                   return ClassCard(
                     session: item.session,
-                    dailySessionMap: item.dailyMap, // Pass map ID ke kartu
+                    baseTitle: item.baseTitle, // Pass judul bersih
+                    daysNames: item.daysNames.toList()..sort(), // Pass list hari
+                    dailySessionMap: item.dailyMap,
                     onRefresh: () { setState(() {}); },
                   );
                 },
