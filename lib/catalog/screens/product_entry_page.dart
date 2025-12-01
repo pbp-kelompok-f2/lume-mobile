@@ -25,7 +25,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
   // --- State Data ---
   List<Product> _displayedProducts = [];
   List<Product> _allCachedProducts = [];
-  
+
   // --- State Pagination ---
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -38,7 +38,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _minPriceController = TextEditingController();
   final TextEditingController _maxPriceController = TextEditingController();
-  
+
   String _searchQuery = "";
   double? _minPrice;
   double? _maxPrice;
@@ -67,7 +67,9 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPagedProducts(refresh: true);
       // FETCH CART DI AWAL
-      context.read<CartProvider>().fetchCartCount(context.read<CookieRequest>());
+      context.read<CartProvider>().fetchCartCount(
+        context.read<CookieRequest>(),
+      );
     });
   }
 
@@ -100,12 +102,12 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
       final response = await request.get(
         'http://localhost:8000/catalog/api/products/?limit=$_limit&offset=$_offset',
       );
-      
+
       List<Product> newItems = [];
       if (response['results'] != null) {
-         for (var d in response['results']) {
-           if (d != null) newItems.add(Product.fromJson(d));
-         }
+        for (var d in response['results']) {
+          if (d != null) newItems.add(Product.fromJson(d));
+        }
       }
 
       if (!mounted) return;
@@ -137,12 +139,18 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
           }
         }
         _allCachedProducts = list;
-      } catch (e) { debugPrint("Error fetch all: $e"); }
+      } catch (e) {
+        debugPrint("Error fetch all: $e");
+      }
     }
 
     List<Product> results = List.from(_allCachedProducts);
     if (_searchQuery.isNotEmpty) {
-      results = results.where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+      results = results
+          .where(
+            (p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()),
+          )
+          .toList();
     }
     if (_minPrice != null) {
       results = results.where((p) => p.price >= _minPrice!).toList();
@@ -152,19 +160,33 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
     }
 
     switch (_sortOption) {
-      case 'price_asc': results.sort((a, b) => a.price.compareTo(b.price)); break;
-      case 'price_desc': results.sort((a, b) => b.price.compareTo(a.price)); break;
-      case 'name_asc': results.sort((a, b) => a.name.compareTo(b.name)); break;
+      case 'price_asc':
+        results.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case 'price_desc':
+        results.sort((a, b) => b.price.compareTo(a.price));
+        break;
+      case 'name_asc':
+        results.sort((a, b) => a.name.compareTo(b.name));
+        break;
     }
 
-    if (mounted) setState(() { _displayedProducts = results; _isLoading = false; });
+    if (mounted)
+      setState(() {
+        _displayedProducts = results;
+        _isLoading = false;
+      });
   }
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       setState(() => _searchQuery = query);
-      if (!_isFiltering) { _fetchPagedProducts(refresh: true); } else { _runFilterMode(); }
+      if (!_isFiltering) {
+        _fetchPagedProducts(refresh: true);
+      } else {
+        _runFilterMode();
+      }
     });
   }
 
@@ -173,11 +195,15 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
-          top: 24, left: 24, right: 24, 
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24
+          top: 24,
+          left: 24,
+          right: 24,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -186,12 +212,21 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Filter & Sort", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                const Text(
+                  "Filter & Sort",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
               ],
             ),
             const SizedBox(height: 16),
-            const Text("Sort By", style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text(
+              "Sort By",
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -203,15 +238,30 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
               ],
             ),
             const SizedBox(height: 24),
-            const Text("Price Range (Rp)", style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text(
+              "Price Range (Rp)",
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: _buildPriceInput(_minPriceController, "Min", (v) => _minPrice = v)),
+                Expanded(
+                  child: _buildPriceInput(
+                    _minPriceController,
+                    "Min",
+                    (v) => _minPrice = v,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 const Text("-"),
                 const SizedBox(width: 12),
-                Expanded(child: _buildPriceInput(_maxPriceController, "Max", (v) => _maxPrice = v)),
+                Expanded(
+                  child: _buildPriceInput(
+                    _maxPriceController,
+                    "Max",
+                    (v) => _maxPrice = v,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 32),
@@ -221,14 +271,29 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                   child: OutlinedButton(
                     onPressed: () {
                       setState(() {
-                        _minPrice = null; _maxPrice = null; _sortOption = "default";
-                        _minPriceController.clear(); _maxPriceController.clear();
+                        _minPrice = null;
+                        _maxPrice = null;
+                        _sortOption = "default";
+                        _minPriceController.clear();
+                        _maxPriceController.clear();
                       });
                       Navigator.pop(ctx);
-                      if (_searchQuery.isEmpty) { _fetchPagedProducts(refresh: true); } else { _runFilterMode(); }
+                      if (_searchQuery.isEmpty) {
+                        _fetchPagedProducts(refresh: true);
+                      } else {
+                        _runFilterMode();
+                      }
                     },
-                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                    child: const Text("Reset", style: TextStyle(color: Colors.black)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      "Reset",
+                      style: TextStyle(color: Colors.black),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -238,12 +303,24 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                       Navigator.pop(ctx);
                       _runFilterMode();
                     },
-                    style: ElevatedButton.styleFrom(backgroundColor: LumeColors.sageGreen, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                    child: const Text("Apply", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: LumeColors.sageGreen,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      "Apply",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -263,19 +340,34 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
       selectedColor: LumeColors.sageGreen,
       labelStyle: TextStyle(color: selected ? Colors.white : Colors.black),
       backgroundColor: Colors.grey.shade100,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide.none),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide.none,
+      ),
     );
   }
 
-  Widget _buildPriceInput(TextEditingController controller, String hint, Function(double?) onChanged) {
+  Widget _buildPriceInput(
+    TextEditingController controller,
+    String hint,
+    Function(double?) onChanged,
+  ) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
       onChanged: (val) => onChanged(double.tryParse(val)),
       decoration: InputDecoration(
-        hintText: hint, filled: true, fillColor: Colors.grey.shade100,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
     );
   }
@@ -300,14 +392,25 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
         appBar: AppBar(
           backgroundColor: LumeColors.creamBackground,
           elevation: 0,
-          title: const Text("Products", style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: LumeColors.darkText, letterSpacing: -0.5)),
+          title: const Text(
+            "Products",
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: LumeColors.darkText,
+              letterSpacing: -0.5,
+            ),
+          ),
           centerTitle: false,
         ),
         body: Column(
           children: [
             // --- Search & Cart ---
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -324,57 +427,79 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                         decoration: InputDecoration(
                           hintText: "Search Products",
                           hintStyle: GoogleFonts.dmSans(color: Colors.grey),
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.grey,
+                          ),
                           suffixIcon: IconButton(
-                            icon: Icon(Icons.tune, color: _isFiltering ? LumeColors.sageGreen : Colors.grey),
+                            icon: Icon(
+                              Icons.tune,
+                              color: _isFiltering
+                                  ? LumeColors.sageGreen
+                                  : Colors.grey,
+                            ),
                             onPressed: _showFilterModal,
                           ),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  
+
                   // --- CART ICON DENGAN BADGE HIJAU & LOGIKA 0 ---
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const CartPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const CartPage(),
+                        ),
                       ).then((_) {
-                        context.read<CartProvider>().fetchCartCount(context.read<CookieRequest>());
+                        context.read<CartProvider>().fetchCartCount(
+                          context.read<CookieRequest>(),
+                        );
                       });
                     },
                     child: AddToCartIcon(
                       key: cartKey,
+                      badgeOptions: const BadgeOptions(
+                        active:
+                            false, // Disable the built-in badge from add_to_cart_animation
+                      ),
                       icon: Consumer<CartProvider>(
                         builder: (context, cartProvider, child) {
-                          // Ikon Keranjang Dasar
+                          // Base Cart Icon
                           Widget cartIcon = Container(
-                            height: 48, width: 48,
+                            height: 48,
+                            width: 48,
                             decoration: BoxDecoration(
-                              color: Colors.white, 
-                              borderRadius: BorderRadius.circular(12), 
-                              border: Border.all(color: Colors.grey.shade300)
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
                             ),
-                            child: const Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText),
+                            child: const Icon(
+                              Icons.shopping_cart_outlined,
+                              color: LumeColors.darkText,
+                            ),
                           );
 
-                          // Jika counter > 0, bungkus dengan Badge
+                          // Only show badge if counter > 0
                           if (cartProvider.counter > 0) {
                             return Badge(
                               label: Text(
                                 "${cartProvider.counter}",
                                 style: const TextStyle(color: Colors.white),
                               ),
-                              backgroundColor: LumeColors.darkGreen, // Warna Hijau
+                              backgroundColor: LumeColors.darkGreen,
                               child: cartIcon,
                             );
                           }
-                          
-                          // Jika 0, tampilkan ikon polos saja
+
+                          // Return plain icon when counter is 0
                           return cartIcon;
                         },
                       ),
@@ -390,24 +515,39 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _displayedProducts.isEmpty
-                      ? Center(child: Text("No products found.", style: GoogleFonts.inter(color: Colors.grey)))
-                      : GridView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(20),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.7,
+                  ? Center(
+                      child: Text(
+                        "No products found.",
+                        style: GoogleFonts.inter(color: Colors.grey),
+                      ),
+                    )
+                  : GridView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(20),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 0.7,
                           ),
-                          itemCount: _displayedProducts.length + (_isLoadingMore ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == _displayedProducts.length) {
-                              return const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()));
-                            }
-                            return AppProductCard(
-                              product: _displayedProducts[index],
-                              runAnimation: runAddToCartAnimation, 
-                            );
-                          },
-                        ),
+                      itemCount:
+                          _displayedProducts.length + (_isLoadingMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _displayedProducts.length) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
+                        return AppProductCard(
+                          product: _displayedProducts[index],
+                          runAnimation: runAddToCartAnimation,
+                        );
+                      },
+                    ),
             ),
           ],
         ),
