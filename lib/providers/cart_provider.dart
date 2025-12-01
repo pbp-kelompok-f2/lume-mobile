@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
-import 'package:lume_mobile/models/cart_items.dart'; // Sesuaikan import model Anda
+import 'package:lume_mobile/models/cart_items.dart'; 
 
 class CartProvider extends ChangeNotifier {
   List<CartItem> _cartItems = [];
@@ -40,7 +40,7 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<bool> addToCart(CookieRequest request, String productId) async { 
-    String baseUrl = "http://localhost:8000"; // Sesuaikan URL
+    String baseUrl = "http://localhost:8000"; 
 
     final response = await request.postJson(
       "$baseUrl/cart/flutter/add/",

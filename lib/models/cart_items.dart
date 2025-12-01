@@ -1,4 +1,4 @@
-import 'dart:convert';
+
 
 class CartItem {
   int id;
@@ -7,7 +7,7 @@ class CartItem {
   String image;
   int quantity;
   String productId;
-  bool isSelected; // ⬅️ NEW
+  bool isSelected; 
 
   CartItem({
     required this.id,
@@ -16,7 +16,7 @@ class CartItem {
     required this.image,
     required this.quantity,
     required this.productId,
-    required this.isSelected, // ⬅️ NEW
+    required this.isSelected, 
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
