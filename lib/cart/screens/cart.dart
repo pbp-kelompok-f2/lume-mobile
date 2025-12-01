@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:lume_mobile/models/cart_items.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
-import 'package:lume_mobile/auth/screens/login_page.dart'; // ⬅️ IMPORT LOGIN PAGE
+import 'package:lume_mobile/auth/screens/login_page.dart'; 
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -19,7 +19,6 @@ class _CartPageState extends State<CartPage> {
   final Set<int> _selectedItemIds = {};
   bool _isLoading = true;
 
-  // Sesuaikan URL backend
   final String baseUrl = "http://localhost:8000";
 
  @override
@@ -30,12 +29,12 @@ class _CartPageState extends State<CartPage> {
 
       // Kalau belum login -> redirect ke halaman login
       if (!request.loggedIn) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const LoginPage(showBack: true),
-          ),
-        );
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const LoginPage(showBack: true),
+            ),
+          );
         return;
       }
 

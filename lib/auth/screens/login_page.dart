@@ -7,12 +7,12 @@ import 'package:lume_mobile/auth/screens/register_page.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
 
 class LoginPage extends StatefulWidget {
-  // ⬇️ flag untuk menentukan apakah perlu tampilkan tombol back
+  // dipakai untuk menentukan apakah perlu tampilkan tombol back
   final bool showBack;
 
   const LoginPage({
     super.key,
-    this.showBack = false, // default: dipakai dari tempat lain tanpa back button
+    this.showBack = false, // default: login biasa tanpa back
   });
 
   @override
@@ -30,27 +30,27 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
+      appBar: widget.showBack
+          ? AppBar(
+              backgroundColor: LumeColors.creamBackground,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: LumeColors.darkGreen,
+                ),
+                onPressed: () {
+                  Navigator.pop(context); // balik ke halaman sebelumnya
+                },
+              ),
+            )
+          : null,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 🔙 BACK BUTTON (opsional)
-              if (widget.showBack)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: LumeColors.darkGreen,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context); // balik ke page sebelumnya (misal CartPage)
-                    },
-                  ),
-                ),
-
               const Icon(Icons.spa, size: 80, color: LumeColors.darkGreen),
               const SizedBox(height: 20),
               const Text(
@@ -63,6 +63,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 40),
 
+              // Username
               TextField(
                 controller: _usernameController,
                 decoration: InputDecoration(
@@ -77,6 +78,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
+              // Password
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -92,6 +94,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 24),
 
+              // Login button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -128,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               );
 
-                              // Setelah login, ganti ke MainScaffold
+                              // setelah login, ganti ke MainScaffold
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -142,8 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                               showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
-                                  title:
-                                      const Text('Login Failed'),
+                                  title: const Text('Login Failed'),
                                   content: Text(
                                     response['message'] ??
                                         "Invalid credentials",
@@ -183,6 +185,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
+              // Sign up link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -195,8 +198,7 @@ class _LoginPageState extends State<LoginPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const RegisterPage(),
+                          builder: (context) => const RegisterPage(),
                         ),
                       );
                     },
