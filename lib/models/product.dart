@@ -1,4 +1,4 @@
-import 'dart:convert';
+
 
 class Product {
   final String id;
@@ -7,7 +7,7 @@ class Product {
   final String description;
   final String thumbnail;
   final bool inStock;
-  final int stock; // <-- 1. TAMBAHKAN INI
+  final int stock;
 
   Product({
     required this.id,
@@ -16,7 +16,7 @@ class Product {
     required this.description,
     required this.thumbnail,
     required this.inStock,
-    required this.stock, // <-- 2. TAMBAHKAN INI
+    required this.stock, 
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -27,7 +27,7 @@ class Product {
       description: json['description'],
       thumbnail: json['thumbnail_proxy'] ?? json['thumbnail'] ?? "",
       inStock: json['in_stock'],
-      stock: json['stock'] ?? 0, // <-- 3. AMBIL DARI JSON
+      stock: json['stock'] ?? 0, 
     );
   }
 }

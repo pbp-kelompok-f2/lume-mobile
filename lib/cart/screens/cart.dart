@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+
 import 'package:lume_mobile/models/cart_items.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/auth/screens/login_page.dart'; 
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -17,19 +19,43 @@ class _CartPageState extends State<CartPage> {
   final Set<int> _selectedItemIds = {};
   bool _isLoading = true;
 
-  // Sesuaikan URL backend
   final String baseUrl = "http://localhost:8000";
 
-  @override
+ @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final request = context.read<CookieRequest>();
+
+      // Kalau belum login -> redirect ke halaman login
+      if (!request.loggedIn) {
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const LoginPage(showBack: true),
+            ),
+          );
+        return;
+      }
+
+      // Kalau sudah login -> fetch cart
       _fetchCartItems();
     });
   }
 
   Future<void> _fetchCartItems() async {
     final request = context.read<CookieRequest>();
+
+    // Defensive: kalau tiba-tiba ke-call tapi user belum login
+    if (!request.loggedIn) {
+      setState(() {
+        _cartItems = [];
+        _selectedItemIds.clear();
+        _isLoading = false;
+      });
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       // Panggil endpoint list flutter
@@ -120,7 +146,7 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  // Toggle satu item (checkbox per item) -> sync backend
+  // Toggle satu item (checkbox per item) → sync backend
   Future<void> _toggleItemSelection(CartItem item, bool isSelected) async {
     final request = context.read<CookieRequest>();
 
@@ -284,21 +310,27 @@ class _CartPageState extends State<CartPage> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.shopping_bag_outlined,
-                                  size: 64,
-                                  color:
-                                      LumeColors.mutedText.withOpacity(0.5)),
+                              Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 64,
+                                color:
+                                    LumeColors.mutedText.withOpacity(0.5),
+                              ),
                               const SizedBox(height: 16),
                               const Text(
                                 "Your cart is empty",
-                                style: TextStyle(color: LumeColors.mutedText),
+                                style: TextStyle(
+                                  color: LumeColors.mutedText,
+                                ),
                               ),
                             ],
                           ),
                         )
                       : ListView.separated(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
                           itemCount: _cartItems.length,
                           separatorBuilder: (ctx, index) =>
                               const SizedBox(height: 16),
@@ -343,9 +375,12 @@ class _CartPageState extends State<CartPage> {
               value: isSelected,
               activeColor: LumeColors.darkGreen,
               side: const BorderSide(
-                  color: LumeColors.mutedText, width: 1.5),
+                color: LumeColors.mutedText,
+                width: 1.5,
+              ),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4)),
+                borderRadius: BorderRadius.circular(4),
+              ),
               onChanged: (val) {
                 if (val == null) return;
                 _toggleItemSelection(item, val);
@@ -366,10 +401,11 @@ class _CartPageState extends State<CartPage> {
               height: 90,
               fit: BoxFit.cover,
               errorBuilder: (ctx, error, stackTrace) => Container(
-                  width: 70,
-                  height: 90,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.image)),
+                width: 70,
+                height: 90,
+                color: Colors.grey[300],
+                child: const Icon(Icons.image),
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -429,9 +465,10 @@ class _CartPageState extends State<CartPage> {
                       child: Text(
                         '${item.quantity}',
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: LumeColors.darkText),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: LumeColors.darkText,
+                        ),
                       ),
                     ),
                     _buildQtyBtn(Icons.add, () {
@@ -445,12 +482,15 @@ class _CartPageState extends State<CartPage> {
                 onTap: () => _deleteItem(item.id),
                 child: const Padding(
                   padding: EdgeInsets.all(4.0),
-                  child: Icon(Icons.delete_outline,
-                      color: Color(0xFFE57373), size: 22),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: Color(0xFFE57373),
+                    size: 22,
+                  ),
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -461,145 +501,170 @@ class _CartPageState extends State<CartPage> {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(6),
-        child: Icon(icon, size: 14, color: LumeColors.darkText),
+        child: Icon(
+          icon,
+          size: 14,
+          color: LumeColors.darkText,
+        ),
       ),
     );
   }
 
   Widget _buildOrderSummary(bool isAllSelected) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, -4),
-          ),
-        ],
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(20),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: isAllSelected,
-                  activeColor: LumeColors.darkGreen,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4)),
-                  onChanged: _toggleSelectAll,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                "Select All Items",
-                style: TextStyle(color: LumeColors.mutedText),
-              ),
-              const Spacer(),
-            ],
-          ),
-          const Divider(height: 24, color: LumeColors.brownBorder),
-          const Text(
-            "Order Summary",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: LumeColors.darkText,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Total (${_selectedItemIds.length} items)",
-                style: const TextStyle(
-                  color: LumeColors.mutedText,
-                  fontSize: 15,
-                ),
-              ),
-              Text(
-                "Rp ${_totalPrice.toStringAsFixed(0).replaceAllMapped(
-                      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                      (Match m) => '${m[1]}.',
-                    )}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: LumeColors.darkText,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _selectedItemIds.isEmpty
-                  ? null
-                  : () {
-                      // Navigate to Checkout Page logic
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: LumeColors.darkGreen,
-                disabledBackgroundColor: Colors.grey[300],
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black12,
+          blurRadius: 8,
+          offset: Offset(0, -3),
+        ),
+      ],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min, // ⬅️ penting biar nggak makan tinggi berlebih
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Row Select All
+        Row(
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: Checkbox(
+                value: isAllSelected,
+                activeColor: LumeColors.darkGreen,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                elevation: 0,
+                onChanged: _toggleSelectAll,
               ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "Proceed to Checkout",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(
-                    Icons.arrow_forward,
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              "Select All Items",
+              style: TextStyle(
+                color: LumeColors.mutedText,
+                fontSize: 13,
+              ),
+            ),
+            const Spacer(),
+          ],
+        ),
+        const SizedBox(height: 6),
+        const Divider(
+          height: 16,
+          color: LumeColors.brownBorder,
+        ),
+
+        const Text(
+          "Order Summary",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16, // tadinya 18
+            color: LumeColors.darkText,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Row Total
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Total (${_selectedItemIds.length} items)",
+              style: const TextStyle(
+                color: LumeColors.mutedText,
+                fontSize: 13,
+              ),
+            ),
+            Text(
+              "Rp ${_totalPrice.toStringAsFixed(0).replaceAllMapped(
+                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                    (Match m) => '${m[1]}.',
+                  )}",
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: LumeColors.darkText,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // Proceed button
+        SizedBox(
+          width: double.infinity,
+          height: 46, // tadinya 52
+          child: ElevatedButton(
+            onPressed: _selectedItemIds.isEmpty
+                ? null
+                : () {
+                    // Navigate to Checkout Page logic
+                  },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: LumeColors.darkGreen,
+              disabledBackgroundColor: Colors.grey[300],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              elevation: 0,
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Proceed to Checkout",
+                  style: TextStyle(
                     color: Colors.white,
-                    size: 18,
-                  )
-                ],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                SizedBox(width: 6),
+                Icon(
+                  Icons.arrow_forward,
+                  color: Colors.white,
+                  size: 18,
+                )
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Continue shopping
+        SizedBox(
+          width: double.infinity,
+          height: 44, // sedikit lebih pendek
+          child: OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(
+                color: LumeColors.brownBorder,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+            child: const Text(
+              "Continue Shopping",
+              style: TextStyle(
+                color: LumeColors.mutedText,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: LumeColors.brownBorder),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(26),
-                ),
-              ),
-              child: const Text(
-                "Continue Shopping",
-                style: TextStyle(
-                  color: LumeColors.mutedText,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }
