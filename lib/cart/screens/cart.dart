@@ -6,7 +6,7 @@ import 'package:lume_mobile/models/cart_items.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({Key? key}) : super(key: key);
+  const CartPage({super.key});
 
   @override
   _CartPageState createState() => _CartPageState();

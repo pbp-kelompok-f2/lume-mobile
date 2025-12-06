@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:lume_mobile/providers/user_provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
