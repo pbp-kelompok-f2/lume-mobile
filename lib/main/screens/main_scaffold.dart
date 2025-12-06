@@ -3,6 +3,10 @@ import 'package:lume_mobile/catalog/screens/product_entry_page.dart';
 import 'package:lume_mobile/home/screens/home_page.dart';
 import 'package:lume_mobile/profile/screens/profile_page.dart'; 
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/providers/cart_provider.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:lume_mobile/booking_kelas/screens/class_list_page.dart';
 
 class MainScaffold extends StatefulWidget {
   // Parameter opsional untuk menentukan tab awal
@@ -15,12 +19,36 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  late int _selectedIndex;
+  late int _selectedIndex; // Variabel ini perlu diinisialisasi
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex;
+    
+    // 🔑 FIX UTAMA: Inisialisasi _selectedIndex menggunakan nilai dari widget
+    _selectedIndex = widget.initialIndex; 
+
+    // Lanjutkan dengan logika fetch cart yang sudah benar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchCartOnLoad();
+    });
+  }
+
+  void _fetchCartOnLoad() async {
+    // Gunakan context.read karena kita berada di initState/callback
+    final request = context.read<CookieRequest>();
+
+    // Hanya fetch jika sudah login (seharusnya selalu true setelah navigasi dari LoginPage)
+    if (request.loggedIn) {
+      final cartProvider = context.read<CartProvider>();
+      try {
+        // Panggil fetchCart di sini. Cookie sesi sudah pasti siap.
+        await cartProvider.fetchCart(request);
+        debugPrint("Cart fetched successfully from MainScaffold.");
+      } catch (e) {
+        debugPrint("Error fetching cart on load: $e");
+      }
+    }
   }
 
   void _onItemTapped(int index) {
@@ -36,7 +64,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         onNavigateTo: (index) => _onItemTapped(index),
       ),
       const ProductEntryPage(),   
-      const Center(child: Text("Classes (Coming Soon)")), 
+      const ClassListPage(), 
       const ProfilePage(), 
     ];
 

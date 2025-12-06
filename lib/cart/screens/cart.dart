@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+
 import 'package:lume_mobile/models/cart_items.dart';
-import 'package:lume_mobile/theme/lume_colors.dart'; // Import LumeColors
+import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/auth/screens/login_page.dart'; 
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -13,40 +16,75 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> {
   List<CartItem> _cartItems = [];
-  // State lokal untuk menyimpan ID item yang dicentang
-  final Set<int> _selectedItemIds = {}; 
+  final Set<int> _selectedItemIds = {};
   bool _isLoading = true;
 
-  // Ganti URL ini dengan URL backend Django lokal/deploy kamu
-  final String baseUrl = "http://127.0.0.1:8000"; 
+  final String baseUrl = "http://localhost:8000";
 
-  @override
+ @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final request = context.read<CookieRequest>();
+
+      // Kalau belum login -> redirect ke halaman login
+      if (!request.loggedIn) {
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const LoginPage(showBack: true),
+            ),
+          );
+        return;
+      }
+
+      // Kalau sudah login -> fetch cart
       _fetchCartItems();
     });
   }
 
   Future<void> _fetchCartItems() async {
     final request = context.read<CookieRequest>();
+
+    // Defensive: kalau tiba-tiba ke-call tapi user belum login
+    if (!request.loggedIn) {
+      setState(() {
+        _cartItems = [];
+        _selectedItemIds.clear();
+        _isLoading = false;
+      });
+      return;
+    }
+
+    setState(() => _isLoading = true);
     try {
-      var response = await request.get('$baseUrl/cart/api/get-cart/'); 
-      
+      // Panggil endpoint list flutter
+      var response = await request.get('$baseUrl/cart/flutter/list/');
+
       List<CartItem> items = [];
-      for (var d in response) {
-        if (d != null) {
-          items.add(CartItem.fromJson(d));
+      if (response['items'] != null) {
+        for (var d in response['items']) {
+          if (d != null) {
+            items.add(CartItem.fromJson(d));
+          }
         }
       }
 
       setState(() {
         _cartItems = items;
+
+        // Inisialisasi selected IDs dari is_selected backend
+        _selectedItemIds
+          ..clear()
+          ..addAll(
+            items.where((e) => e.isSelected).map((e) => e.id),
+          );
+
         _isLoading = false;
       });
     } catch (e) {
-      print("Error fetching cart: $e");
-      setState(() => _isLoading = false);
+      debugPrint("Error fetching cart: $e");
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -61,29 +99,191 @@ class _CartPageState extends State<CartPage> {
     return total;
   }
 
-  // Toggle seleksi semua item
-  void _toggleSelectAll(bool? value) {
-    setState(() {
-      if (value == true) {
-        _selectedItemIds.addAll(_cartItems.map((e) => e.id));
-      } else {
-        _selectedItemIds.clear();
+  // Toggle seleksi semua item (sinkron ke backend)
+  void _toggleSelectAll(bool? value) async {
+    final request = context.read<CookieRequest>();
+
+    if (value == true) {
+      // SELECT ALL di backend
+      try {
+        final response = await request.postJson(
+          '$baseUrl/cart/flutter/select-all/',
+          jsonEncode(<String, dynamic>{}),
+        );
+
+        if (response['ok'] == true) {
+          setState(() {
+            for (var item in _cartItems) {
+              item.isSelected = true;
+            }
+            _selectedItemIds
+              ..clear()
+              ..addAll(_cartItems.map((e) => e.id));
+          });
+        }
+      } catch (e) {
+        debugPrint("Error select all: $e");
       }
-    });
+    } else {
+      // UNSELECT ALL di backend
+      try {
+        final response = await request.postJson(
+          '$baseUrl/cart/flutter/unselect-all/',
+          jsonEncode(<String, dynamic>{}),
+        );
+
+        if (response['ok'] == true) {
+          setState(() {
+            for (var item in _cartItems) {
+              item.isSelected = false;
+            }
+            _selectedItemIds.clear();
+          });
+        }
+      } catch (e) {
+        debugPrint("Error unselect all: $e");
+      }
+    }
+  }
+
+  // Toggle satu item (checkbox per item) → sync backend
+  Future<void> _toggleItemSelection(CartItem item, bool isSelected) async {
+    final request = context.read<CookieRequest>();
+
+    try {
+      final response = await request.postJson(
+        '$baseUrl/cart/flutter/toggle/',
+        jsonEncode(<String, dynamic>{
+          'item_id': item.id,
+          'is_selected': isSelected,
+        }),
+      );
+
+      if (response['ok'] == true) {
+        setState(() {
+          item.isSelected = isSelected;
+          if (isSelected) {
+            _selectedItemIds.add(item.id);
+          } else {
+            _selectedItemIds.remove(item.id);
+          }
+        });
+      } else {
+        final message =
+            response['message'] ?? 'Failed to update selection.';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Error toggling selection: $e");
+    }
+  }
+
+  // Update quantity (sinkron ke set-qty backend)
+  Future<void> _updateItemQuantity(int itemId, int newQty) async {
+    final request = context.read<CookieRequest>();
+
+    try {
+      final response = await request.postJson(
+        '$baseUrl/cart/flutter/set-qty/',
+        jsonEncode(<String, dynamic>{
+          'item_id': itemId,
+          'quantity': newQty,
+        }),
+      );
+
+      if (response['ok'] == true) {
+        // backend balikin quantity final (bisa 0 kalau di-delete)
+        final updatedQty = response['quantity'] ?? newQty;
+
+        setState(() {
+          final index = _cartItems.indexWhere((item) => item.id == itemId);
+          if (index != -1) {
+            if (updatedQty <= 0) {
+              // item dihapus di server → hapus juga di UI
+              _selectedItemIds.remove(itemId);
+              _cartItems.removeAt(index);
+            } else {
+              _cartItems[index].quantity = updatedQty;
+            }
+          }
+        });
+      } else {
+        // kasus: stok kurang, dsb.
+        final message = response['message'] ?? 'Failed to update quantity.';
+        final safeQty = response['quantity'];
+
+        if (safeQty != null) {
+          setState(() {
+            final index = _cartItems.indexWhere((item) => item.id == itemId);
+            if (index != -1) {
+              _cartItems[index].quantity = safeQty;
+            }
+          });
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Error updating quantity: $e");
+    }
+  }
+
+  // Delete item (sinkron ke backend)
+  Future<void> _deleteItem(int itemId) async {
+    final request = context.read<CookieRequest>();
+
+    try {
+      final response = await request.postJson(
+        '$baseUrl/cart/flutter/remove/',
+        jsonEncode(<String, dynamic>{
+          'item_id': itemId,
+        }),
+      );
+
+      if (response['ok'] == true) {
+        setState(() {
+          _cartItems.removeWhere((item) => item.id == itemId);
+          _selectedItemIds.remove(itemId);
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Item removed from cart.')),
+          );
+        }
+      } else {
+        final message = response['message'] ?? 'Failed to remove item.';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("Error removing item: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Cek apakah semua item terpilih untuk status checkbox 'Select All'
-    bool isAllSelected = _cartItems.isNotEmpty && _selectedItemIds.length == _cartItems.length;
+    bool isAllSelected =
+        _cartItems.isNotEmpty && _cartItems.every((e) => e.isSelected);
 
     return Scaffold(
-      backgroundColor: LumeColors.creamBackground, // Background Cream
+      backgroundColor: LumeColors.creamBackground,
       appBar: AppBar(
         title: const Text(
           "Shopping Cart",
           style: TextStyle(
-            color: LumeColors.darkText, 
+            color: LumeColors.darkText,
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
@@ -92,54 +292,69 @@ class _CartPageState extends State<CartPage> {
         backgroundColor: LumeColors.creamBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: LumeColors.darkText),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: LumeColors.darkText),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: LumeColors.darkGreen))
+          ? const Center(
+              child: CircularProgressIndicator(color: LumeColors.darkGreen),
+            )
           : Column(
               children: [
-                // === Bagian List Items ===
+                // === List Items ===
                 Expanded(
                   child: _cartItems.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.shopping_bag_outlined, size: 64, color: LumeColors.mutedText.withOpacity(0.5)),
+                              Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 64,
+                                color:
+                                    LumeColors.mutedText.withOpacity(0.5),
+                              ),
                               const SizedBox(height: 16),
-                              const Text("Your cart is empty", style: TextStyle(color: LumeColors.mutedText)),
+                              const Text(
+                                "Your cart is empty",
+                                style: TextStyle(
+                                  color: LumeColors.mutedText,
+                                ),
+                              ),
                             ],
                           ),
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
                           itemCount: _cartItems.length,
-                          separatorBuilder: (ctx, index) => const SizedBox(height: 16),
+                          separatorBuilder: (ctx, index) =>
+                              const SizedBox(height: 16),
                           itemBuilder: (context, index) {
                             final item = _cartItems[index];
                             return _buildCartItemCard(item);
                           },
                         ),
                 ),
-                
-                // === Bagian Order Summary (Bottom Sheet style) ===
-                if (_cartItems.isNotEmpty) 
-                  _buildOrderSummary(isAllSelected),
+
+                // === Order Summary ===
+                if (_cartItems.isNotEmpty) _buildOrderSummary(isAllSelected),
               ],
             ),
     );
   }
 
-  // Widget Kartu Produk (Sesuai Desain: Checkbox -> Gambar -> Info -> Kontrol)
   Widget _buildCartItemCard(CartItem item) {
     bool isSelected = _selectedItemIds.contains(item.id);
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: LumeColors.cardBackground, // Background Beige/Card
+        color: LumeColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -152,43 +367,50 @@ class _CartPageState extends State<CartPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 0. Checkbox
+          // Checkbox
           SizedBox(
             width: 24,
             height: 24,
             child: Checkbox(
               value: isSelected,
               activeColor: LumeColors.darkGreen,
-              side: const BorderSide(color: LumeColors.mutedText, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+              side: const BorderSide(
+                color: LumeColors.mutedText,
+                width: 1.5,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
               onChanged: (val) {
-                setState(() {
-                  if (val == true) {
-                    _selectedItemIds.add(item.id);
-                  } else {
-                    _selectedItemIds.remove(item.id);
-                  }
-                });
+                if (val == null) return;
+                _toggleItemSelection(item, val);
               },
             ),
           ),
           const SizedBox(width: 12),
 
-          // 1. Gambar Produk
+          // Gambar
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
-              item.image.startsWith('http') ? item.image : '$baseUrl/media/${item.image}',
+              // Handle URL gambar dengan benar (jika relatif tambahkan baseUrl)
+              item.image.startsWith('http')
+                  ? item.image
+                  : '$baseUrl/media/${item.image}',
               width: 70,
-              height: 90, // Agak memanjang vertikal sesuai desain
+              height: 90,
               fit: BoxFit.cover,
-              errorBuilder: (ctx, error, stackTrace) => 
-                  Container(width: 70, height: 90, color: Colors.grey[300], child: const Icon(Icons.image)),
+              errorBuilder: (ctx, error, stackTrace) => Container(
+                width: 70,
+                height: 90,
+                color: Colors.grey[300],
+                child: const Icon(Icons.image),
+              ),
             ),
           ),
           const SizedBox(width: 16),
 
-          // 2. Info Produk (Nama & Harga)
+          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,7 +418,7 @@ class _CartPageState extends State<CartPage> {
                 Text(
                   item.productName,
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold, 
+                    fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: LumeColors.darkText,
                   ),
@@ -205,9 +427,12 @@ class _CartPageState extends State<CartPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  "Rp ${item.price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}",
+                  "Rp ${item.price.toStringAsFixed(0).replaceAllMapped(
+                        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                        (Match m) => '${m[1]}.',
+                      )}",
                   style: const TextStyle(
-                    color: LumeColors.mutedText, 
+                    color: LumeColors.mutedText,
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
                   ),
@@ -216,11 +441,10 @@ class _CartPageState extends State<CartPage> {
             ),
           ),
 
-          // 3. Delete & Quantity Control
+          // Controls
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Quantity Controller (- 1 +)
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: LumeColors.brownBorder),
@@ -229,44 +453,44 @@ class _CartPageState extends State<CartPage> {
                 child: Row(
                   children: [
                     _buildQtyBtn(Icons.remove, () {
-                      if (item.quantity > 1) { 
-                        // Tambahkan logika decrement ke backend
-                        setState(() => item.quantity--);
+                      if (item.quantity > 1) {
+                        _updateItemQuantity(item.id, item.quantity - 1);
+                      } else {
+                        // quantity 1 → kirim 0 ke backend, biar dihapus
+                        _updateItemQuantity(item.id, 0);
                       }
                     }),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
                         '${item.quantity}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: LumeColors.darkText),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: LumeColors.darkText,
+                        ),
                       ),
                     ),
                     _buildQtyBtn(Icons.add, () {
-                      // Tambahkan logika increment ke backend
-                      setState(() => item.quantity++);
+                      _updateItemQuantity(item.id, item.quantity + 1);
                     }),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
-              
-              // Tombol Hapus (Icon Sampah)
               InkWell(
-                onTap: () async {
-                   // Implementasi logika hapus ke backend
-                   // await request.post('$baseUrl/cart/delete/${item.id}/', {});
-                   setState(() {
-                     _cartItems.removeAt(_cartItems.indexOf(item));
-                     _selectedItemIds.remove(item.id);
-                   });
-                },
+                onTap: () => _deleteItem(item.id),
                 child: const Padding(
                   padding: EdgeInsets.all(4.0),
-                  child: Icon(Icons.delete_outline, color: Color(0xFFE57373), size: 22),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: Color(0xFFE57373),
+                    size: 22,
+                  ),
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -277,113 +501,170 @@ class _CartPageState extends State<CartPage> {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(6),
-        child: Icon(icon, size: 14, color: LumeColors.darkText),
+        child: Icon(
+          icon,
+          size: 14,
+          color: LumeColors.darkText,
+        ),
       ),
     );
   }
 
-  // Widget Order Summary di bagian bawah
   Widget _buildOrderSummary(bool isAllSelected) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white, // Bagian bawah putih/bersih agar kontras dengan cream
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: Offset(0, -4),
-          ),
-        ],
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(20),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Select All Checkbox (Opsional, sesuai kebiasaan Cart)
-          Row(
-            children: [
-              SizedBox(
-                width: 24, height: 24,
-                child: Checkbox(
-                  value: isAllSelected,
-                  activeColor: LumeColors.darkGreen,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                  onChanged: _toggleSelectAll,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text("Select All Items", style: TextStyle(color: LumeColors.mutedText)),
-              const Spacer(),
-            ],
-          ),
-          const Divider(height: 24, color: LumeColors.brownBorder),
-          
-          const Text(
-            "Order Summary",
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: LumeColors.darkText),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Total (${_selectedItemIds.length} items)", style: const TextStyle(color: LumeColors.mutedText, fontSize: 15)),
-              Text(
-                "Rp ${_totalPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: LumeColors.darkText),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          
-          // Tombol Checkout
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _selectedItemIds.isEmpty ? null : () {
-                // Navigate to Checkout Page
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: LumeColors.darkGreen, // Warna Dark Green
-                disabledBackgroundColor: Colors.grey[300],
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black12,
+          blurRadius: 8,
+          offset: Offset(0, -3),
+        ),
+      ],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min, // ⬅️ penting biar nggak makan tinggi berlebih
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Row Select All
+        Row(
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: Checkbox(
+                value: isAllSelected,
+                activeColor: LumeColors.darkGreen,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                elevation: 0,
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Proceed to Checkout", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward, color: Colors.white, size: 18)
-                ],
+                onChanged: _toggleSelectAll,
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(width: 6),
+            const Text(
+              "Select All Items",
+              style: TextStyle(
+                color: LumeColors.mutedText,
+                fontSize: 13,
+              ),
+            ),
+            const Spacer(),
+          ],
+        ),
+        const SizedBox(height: 6),
+        const Divider(
+          height: 16,
+          color: LumeColors.brownBorder,
+        ),
 
-          // Tombol Continue Shopping
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: LumeColors.brownBorder),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(26), // Capsule shape
-                ),
+        const Text(
+          "Order Summary",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16, // tadinya 18
+            color: LumeColors.darkText,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Row Total
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Total (${_selectedItemIds.length} items)",
+              style: const TextStyle(
+                color: LumeColors.mutedText,
+                fontSize: 13,
               ),
-              child: const Text(
-                "Continue Shopping",
-                style: TextStyle(color: LumeColors.mutedText, fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+            Text(
+              "Rp ${_totalPrice.toStringAsFixed(0).replaceAllMapped(
+                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                    (Match m) => '${m[1]}.',
+                  )}",
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: LumeColors.darkText,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // Proceed button
+        SizedBox(
+          width: double.infinity,
+          height: 46, // tadinya 52
+          child: ElevatedButton(
+            onPressed: _selectedItemIds.isEmpty
+                ? null
+                : () {
+                    // Navigate to Checkout Page logic
+                  },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: LumeColors.darkGreen,
+              disabledBackgroundColor: Colors.grey[300],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              elevation: 0,
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Proceed to Checkout",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                SizedBox(width: 6),
+                Icon(
+                  Icons.arrow_forward,
+                  color: Colors.white,
+                  size: 18,
+                )
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Continue shopping
+        SizedBox(
+          width: double.infinity,
+          height: 44, // sedikit lebih pendek
+          child: OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(
+                color: LumeColors.brownBorder,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+            child: const Text(
+              "Continue Shopping",
+              style: TextStyle(
+                color: LumeColors.mutedText,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }
