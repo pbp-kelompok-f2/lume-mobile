@@ -7,7 +7,13 @@ import 'package:lume_mobile/auth/screens/register_page.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  // dipakai untuk menentukan apakah perlu tampilkan tombol back
+  final bool showBack;
+
+  const LoginPage({
+    super.key,
+    this.showBack = false, // default: login biasa tanpa back
+  });
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -24,6 +30,21 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
+      appBar: widget.showBack
+          ? AppBar(
+              backgroundColor: LumeColors.creamBackground,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: LumeColors.darkGreen,
+                ),
+                onPressed: () {
+                  Navigator.pop(context); // balik ke halaman sebelumnya
+                },
+              ),
+            )
+          : null,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -42,6 +63,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 40),
 
+              // Username
               TextField(
                 controller: _usernameController,
                 decoration: InputDecoration(
@@ -56,6 +78,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
+              // Password
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -71,6 +94,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 24),
 
+              // Login button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -82,26 +106,24 @@ class _LoginPageState extends State<LoginPage> {
                           String username = _usernameController.text;
                           String password = _passwordController.text;
 
-                          // GANTI URL:P
-                          // Android Emulator: http://10.0.2.2:8000/user/login/
-                          // Chrome / iOS: http://127.0.0.1:8000/user/login/
                           final response = await request.login(
                             "http://localhost:8000/user/api/login/",
                             {
                               'username': username,
                               'password': password,
-                              'ajax': '1', // <--- TAMBAHKAN BARIS INI WAJIB!
+                              'ajax': '1',
                             },
                           );
 
-                          // 🔑 PERBAIKAN 1: Cek status login dari respons JSON
-                          // Cek jika login berhasil. Respon dari Django user/api.py
-                          // harusnya memiliki {'ok': True}
-                          if (response.containsKey('ok') && response['ok'] == true) {
+                          if (response.containsKey('ok') &&
+                              response['ok'] == true) {
                             if (context.mounted) {
-                              String user = response['username'] ?? username; // Ambil dari JSON Django
-                              context.read<UserProvider>().setUsername(user);
-                              // Tampilkan Snackbar
+                              String user =
+                                  response['username'] ?? username;
+                              context
+                                  .read<UserProvider>()
+                                  .setUsername(user);
+
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text("Login successful!"),
@@ -109,11 +131,12 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               );
 
-                              // Navigasi
+                              // setelah login, ganti ke MainScaffold
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const MainScaffold(),
+                                  builder: (context) =>
+                                      const MainScaffold(),
                                 ),
                               );
                             }
@@ -130,7 +153,8 @@ class _LoginPageState extends State<LoginPage> {
                                   actions: [
                                     TextButton(
                                       child: const Text('OK'),
-                                      onPressed: () => Navigator.pop(context),
+                                      onPressed: () =>
+                                          Navigator.pop(context),
                                     ),
                                   ],
                                 ),
@@ -146,7 +170,9 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        )
                       : const Text(
                           "Log In",
                           style: TextStyle(
@@ -159,6 +185,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
+              // Sign up link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
