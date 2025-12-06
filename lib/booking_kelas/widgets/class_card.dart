@@ -22,7 +22,7 @@ class ClassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
-    
+
     // Cek Kategori
     bool isDaily = session.category.toLowerCase() == 'daily';
     bool isWeekly = session.category.toLowerCase() == 'weekly';
@@ -33,9 +33,10 @@ class ClassCard extends StatelessWidget {
     const Color textDark = Color(0xFF171717); // text-neutral-900
     const Color textGray = Color(0xFF374151); // text-gray-700
     const Color labelColor = Color(0xFFA8A29E); // text-stone-400
-    
+
     // Format Harga
-    final String priceStr = "Rp ${session.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}";
+    final String priceStr =
+        "Rp ${session.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}";
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -48,7 +49,7 @@ class ClassCard extends StatelessWidget {
             color: Colors.black12,
             blurRadius: 4,
             offset: Offset(0, 2), // shadow-md
-          )
+          ),
         ],
       ),
       child: Padding(
@@ -82,7 +83,10 @@ class ClassCard extends StatelessWidget {
                           children: [
                             TextSpan(
                               text: session.instructor,
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF293027)),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF293027),
+                              ),
                             ),
                           ],
                         ),
@@ -92,37 +96,55 @@ class ClassCard extends StatelessWidget {
                 ),
                 // Badge Category
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF5F5F4), // bg-stone-100
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [BoxShadow(color: Colors.black12, offset: Offset(0, 1))],
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black12, offset: Offset(0, 1)),
+                    ],
                   ),
                   child: Text(
                     session.category.toUpperCase(),
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
 
             // --- GRID INFO (Time, Price, Room, Capacity) ---
             // Menggunakan Wrap/Row simulasi Grid
             Row(
               children: [
-                Expanded(child: _buildInfoItem("Time", session.time, labelColor)),
+                Expanded(
+                  child: _buildInfoItem("Time", session.time, labelColor),
+                ),
                 Expanded(child: _buildInfoItem("Price", priceStr, labelColor)),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: _buildInfoItem("Room", session.room, labelColor)),
+                Expanded(
+                  child: _buildInfoItem("Room", session.room, labelColor),
+                ),
                 // Capacity hanya muncul jika WEEKLY (sesuai HTML)
                 if (isWeekly)
-                  Expanded(child: _buildInfoItem("Capacity", "${session.capacityCurrent}/${session.capacityMax}", labelColor))
+                  Expanded(
+                    child: _buildInfoItem(
+                      "Capacity",
+                      "${session.capacityCurrent}/${session.capacityMax}",
+                      labelColor,
+                    ),
+                  )
                 else
                   const Spacer(),
               ],
@@ -139,13 +161,12 @@ class ClassCard extends StatelessWidget {
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: daysNames.isNotEmpty 
-                ? daysNames.map((d) => _buildDayBadge(d)).toList()
-                : [const Text("—", style: TextStyle(color: Colors.grey))],
+              children: daysNames.isNotEmpty
+                  ? daysNames.map((d) => _buildDayBadge(d)).toList()
+                  : [const Text("—", style: TextStyle(color: Colors.grey))],
             ),
 
             const SizedBox(height: 24), // mt-auto pt-4
-
             // --- BUTTONS ---
             _buildActionButton(context, request, isDaily),
           ],
@@ -159,7 +180,10 @@ class ClassCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: TextStyle(color: labelColor, fontSize: 13)),
-        Text(value, style: const TextStyle(fontSize: 14, color: Colors.black87)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+        ),
       ],
     );
   }
@@ -171,23 +195,34 @@ class ClassCard extends StatelessWidget {
         color: const Color(0xFFF5F5F4), // bg-stone-100
         border: Border.all(color: const Color(0xFFD6D3D1)), // border-stone-300
         borderRadius: BorderRadius.circular(20),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1)),
+        ],
       ),
       child: Text(
         day,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black87),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
       ),
     );
   }
 
-  Widget _buildActionButton(BuildContext context, CookieRequest request, bool isDaily) {
+  Widget _buildActionButton(
+    BuildContext context,
+    CookieRequest request,
+    bool isDaily,
+  ) {
     // Style Button dari HTML
     // bg-[#D7D6D1] border-[#C9C7C0] text-[#5C5B57] hover:bg-[#CECDC8]
     final ButtonStyle style = ElevatedButton.styleFrom(
       backgroundColor: const Color(0xFFD7D6D1),
       foregroundColor: const Color(0xFF5C5B57),
       elevation: 0,
-      shadowColor: Colors.black, // simulasi shadow-[0_1px_0_#0f0f0f] agak susah di flutter exact match
+      shadowColor: Colors
+          .black, // simulasi shadow-[0_1px_0_#0f0f0f] agak susah di flutter exact match
       padding: const EdgeInsets.symmetric(vertical: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -207,7 +242,10 @@ class ClassCard extends StatelessWidget {
         child: ElevatedButton(
           onPressed: () => _showDaySelectionDialog(context, request),
           style: style,
-          child: const Text("Choose Day", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          child: const Text(
+            "Choose Day",
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
         ),
       );
     } else {
@@ -215,14 +253,16 @@ class ClassCard extends StatelessWidget {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: isFull 
-            ? null 
-            : () => _handleBooking(context, request, session.id),
+          onPressed: isFull
+              ? null
+              : () => _handleBooking(context, request, session.id),
           style: style.copyWith(
-            backgroundColor: isFull ? WidgetStateProperty.all(Colors.grey[300]) : null,
+            backgroundColor: isFull
+                ? WidgetStateProperty.all(Colors.grey[300])
+                : null,
           ),
           child: Text(
-            isFull ? "Unavailable" : "Book Now", 
+            isFull ? "Unavailable" : "Book Now",
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
         ),
@@ -234,11 +274,19 @@ class ClassCard extends StatelessWidget {
   void _showDaySelectionDialog(BuildContext context, CookieRequest request) {
     // Gunakan daysNames dan dailySessionMap yang sudah di-process di ClassListPage
     // agar opsi yang muncul SESUAI dengan data di database (bukan hardcode Senin-Sabtu semua)
-    
+
     // Sort urutan hari biar rapi (Senin -> Minggu)
     final sortedDays = dailySessionMap.keys.toList();
     // Logic sorting manual sederhana berdasarkan nama hari
-    const dayOrder = {'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7};
+    const dayOrder = {
+      'Monday': 1,
+      'Tuesday': 2,
+      'Wednesday': 3,
+      'Thursday': 4,
+      'Friday': 5,
+      'Saturday': 6,
+      'Sunday': 7,
+    };
     sortedDays.sort((a, b) => (dayOrder[a] ?? 10).compareTo(dayOrder[b] ?? 10));
 
     String? selectedDayName;
@@ -250,13 +298,19 @@ class ClassCard extends StatelessWidget {
           builder: (context, setState) {
             return AlertDialog(
               backgroundColor: const Color(0xFFFBF7F5),
-              title: const Text("Select Day", style: TextStyle(color: Color(0xFF5D4037))),
+              title: const Text(
+                "Select Day",
+                style: TextStyle(color: Color(0xFF5D4037)),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: sortedDays.map((dayName) {
                     return RadioListTile<String>(
-                      title: Text(dayName, style: const TextStyle(color: Color(0xFF5D4037))),
+                      title: Text(
+                        dayName,
+                        style: const TextStyle(color: Color(0xFF5D4037)),
+                      ),
                       value: dayName,
                       groupValue: selectedDayName,
                       activeColor: const Color(0xFF6E7D6B),
@@ -270,21 +324,30 @@ class ClassCard extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
                 ElevatedButton(
-                  onPressed: selectedDayName == null 
-                      ? null 
+                  onPressed: selectedDayName == null
+                      ? null
                       : () {
                           // Ambil ID dari Map
-                          int? finalSessionId = dailySessionMap[selectedDayName];
+                          int? finalSessionId =
+                              dailySessionMap[selectedDayName];
                           Navigator.pop(context);
                           if (finalSessionId != null) {
                             _handleBooking(context, request, finalSessionId);
                           }
                         },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6E7D6B)),
-                  child: const Text("Confirm", style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6E7D6B),
+                  ),
+                  child: const Text(
+                    "Confirm",
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
@@ -295,10 +358,14 @@ class ClassCard extends StatelessWidget {
   }
 
   // --- LOGIC: Kirim Request ke Django ---
-  Future<void> _handleBooking(BuildContext context, CookieRequest request, int sessionId) async {
+  Future<void> _handleBooking(
+    BuildContext context,
+    CookieRequest request,
+    int sessionId,
+  ) async {
     // Sesuaikan URL (localhost / 10.0.2.2)
     final response = await request.postJson(
-      "http://127.0.0.1:8000/bookingkelas/book-flutter/", 
+      "http://127.0.0.1:8000/bookingkelas/book-flutter/",
       {"session_id": sessionId},
     );
 
@@ -310,7 +377,7 @@ class ClassCard extends StatelessWidget {
             backgroundColor: const Color(0xFF6E7D6B),
           ),
         );
-        onRefresh(); 
+        onRefresh();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
