@@ -4,6 +4,8 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/models/cart_items.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/checkout/screens/checkout_page.dart';
+
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -544,9 +546,21 @@ class _CartPageState extends State<CartPage> {
             child: ElevatedButton(
               onPressed: _selectedItemIds.isEmpty
                   ? null
-                  : () {
-                      // Navigate to Checkout Page logic
-                    },
+                    : () async {
+                        // Pindah ke halaman Checkout
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CheckoutPage(),
+                          ),
+                        );
+
+                        // Setelah balik dari checkout, refresh cart
+                        // (biar item yang sudah di-checkout kehapus dari UI)
+                        if (mounted) {
+                          _fetchCartItems();
+                        }
+                      },
               style: ElevatedButton.styleFrom(
                 backgroundColor: LumeColors.darkGreen,
                 disabledBackgroundColor: Colors.grey[300],
