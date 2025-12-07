@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 
 import 'package:lume_mobile/models/cart_items.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/checkout/screens/checkout_page.dart';
+
 import 'package:lume_mobile/auth/screens/login_page.dart'; 
 
 class CartPage extends StatefulWidget {
@@ -593,26 +595,37 @@ class _CartPageState extends State<CartPage> {
                 fontSize: 16,
                 color: LumeColors.darkText,
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _selectedItemIds.isEmpty
+                  ? null
+                    : () async {
+                        // Pindah ke halaman Checkout
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CheckoutPage(),
+                          ),
+                        );
 
-        // Proceed button
-        SizedBox(
-          width: double.infinity,
-          height: 46, // tadinya 52
-          child: ElevatedButton(
-            onPressed: _selectedItemIds.isEmpty
-                ? null
-                : () {
-                    // Navigate to Checkout Page logic
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: LumeColors.darkGreen,
-              disabledBackgroundColor: Colors.grey[300],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                        // Setelah balik dari checkout, refresh cart
+                        // (biar item yang sudah di-checkout kehapus dari UI)
+                        if (mounted) {
+                          _fetchCartItems();
+                        }
+                      },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: LumeColors.darkGreen,
+                disabledBackgroundColor: Colors.grey[300],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
               ),
               elevation: 0,
             ),
