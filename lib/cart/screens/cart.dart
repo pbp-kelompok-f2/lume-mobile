@@ -595,6 +595,7 @@ class _CartPageState extends State<CartPage> {
                 fontSize: 16,
                 color: LumeColors.darkText,
               ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -627,8 +628,6 @@ class _CartPageState extends State<CartPage> {
                 ),
                 elevation: 0,
               ),
-              elevation: 0,
-            ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -679,5 +678,6 @@ class _CartPageState extends State<CartPage> {
       ],
     ),
   );
+  
 }
 }
