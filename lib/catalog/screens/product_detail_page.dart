@@ -7,7 +7,7 @@ import 'package:lume_mobile/cart/screens/cart.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
-import 'package:add_to_cart_animation/add_to_cart_animation.dart'; // Import Animasi
+import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -19,13 +19,11 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
-  // Key untuk animasi
   final GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>();
-  final GlobalKey imageKey = GlobalKey(); // Key untuk gambar produk
+  final GlobalKey imageKey = GlobalKey();
   late Function(GlobalKey) runAddToCartAnimation;
 
   void _addToCart(CookieRequest request) async {
-    // Indikator loading (opsional, bisa pakai bool isLoading)
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Processing..."), duration: Duration(milliseconds: 500)),
@@ -33,7 +31,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     try {
       final response = await request.postJson(
-        "http://localhost:8000/cart/flutter/add/", // Ganti 10.0.2.2 jika emulator
+        "http://localhost:8000/cart/flutter/add/",
         jsonEncode(<String, dynamic>{
           'product_id': widget.product.id,
           'quantity': 1,
@@ -42,13 +40,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
       if (mounted) {
         if (response['ok'] == true) {
-          // --- 1. JALANKAN ANIMASI (KARENA SUKSES) ---
           runAddToCartAnimation(imageKey);
-
-          // --- 2. UPDATE BADGE ---
           context.read<CartProvider>().fetchCartCount(request);
 
-          // Pesan sukses
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -57,7 +51,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
           );
         } else {
-          // --- GAGAL: TAMPILKAN PESAN ---
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -83,11 +76,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0
     );
 
-    // Bungkus Scaffold dengan Animation Provider
     return AddToCartAnimation(
       cartKey: cartKey,
       height: 30, width: 30, opacity: 0.85,
-      dragAnimation: const DragToCartAnimationOptions(rotation: false), // Tanpa rotasi
+      dragAnimation: const DragToCartAnimationOptions(rotation: false),
       jumpAnimation: const JumpAnimationOptions(),
       createAddToCartAnimation: (runAddToCartAnimation) {
         this.runAddToCartAnimation = runAddToCartAnimation;
@@ -102,17 +94,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             padding: const EdgeInsets.only(left: 16.0),
             child: IconButton(
               icon: Container(
-                padding: const EdgeInsets.all(8),
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.9),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back, color: LumeColors.darkText),
+                child: const Center(
+                  child: Icon(Icons.arrow_back, color: LumeColors.darkText, size: 24),
+                ),
               ),
               onPressed: () => Navigator.pop(context),
             ),
           ),
-          // --- CART ICON DI APPBAR ---
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
@@ -124,7 +118,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ).then((_) => context.read<CartProvider>().fetchCartCount(request));
                 },
                 child: AddToCartIcon(
-                  key: cartKey, // Target animasi
+                  key: cartKey,
+                  badgeOptions: const BadgeOptions(
+                    active: false, // Disable built-in badge
+                  ),
                   icon: Consumer<CartProvider>(
                     builder: (context, cartProvider, child) {
                       Widget iconBtn = Container(
@@ -134,12 +131,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.grey.shade300),
                         ),
-                        child: const Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText, size: 24),
+                        child: const Center(
+                          child: Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText, size: 24),
+                        ),
                       );
 
+                      // Only show badge if counter > 0
                       if (cartProvider.counter > 0) {
                         return Badge(
-                          label: Text("${cartProvider.counter}"),
+                          label: Text(
+                            "${cartProvider.counter}",
+                            style: const TextStyle(color: Colors.white),
+                          ),
                           backgroundColor: LumeColors.darkGreen,
                           child: iconBtn,
                         );
@@ -156,13 +159,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
         body: Column(
           children: [
-            // --- Scrollable Content ---
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Gambar Produk
                     Stack(
                       children: [
                         Container(
@@ -172,7 +173,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           child: Hero(
                             tag: 'product-img-${widget.product.id}',
                             child: Container(
-                              key: imageKey, // SUMBER ANIMASI (Penting!)
+                              key: imageKey,
                               child: Image.network(
                                 widget.product.thumbnail,
                                 fit: BoxFit.cover,
@@ -201,7 +202,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ],
                     ),
 
-                    // Info Produk
                     Container(
                       transform: Matrix4.translationValues(0.0, -24.0, 0.0),
                       decoration: const BoxDecoration(
@@ -270,7 +270,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
             ),
 
-            // --- Sticky Bottom Bar ---
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
