@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 import '../../models/checkout.dart';
 import '../checkout_service.dart';
 import '../widgets/order_confirmed_dialog.dart';
-import '../../home/screens/home_page.dart';
 import '../../profile/screens/profile_page.dart';
+import 'package:lume_mobile/main/screens/main_scaffold.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -67,7 +67,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     });
 
     try {
-      final result = await _service.fetchCartSummary(request, selectedOnly: true);
+      final result = await _service.fetchCartSummary(
+        request,
+        selectedOnly: true,
+      );
       setState(() {
         _summary = result;
       });
@@ -123,23 +126,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
         builder: (context) => OrderConfirmedDialog(
           onBackToHome: () {
             Navigator.of(context).pop(); // tutup dialog dulu
-            Navigator.of(context).pushAndRemoveUntil(
+            Navigator.pushReplacement(
+              context,
               MaterialPageRoute(
-                builder: (_) => HomePage(
-                  onNavigateTo: (index) {
-                    // Karena dari checkout kamu cuma mau balik ke Home,
-                    // callback ini boleh kosong / dummy aja.
-                  },
-                ),
+                builder: (context) => const MainScaffold(initialIndex: 0),
               ),
-              (route) => false,
             );
           },
           onViewOrderHistory: () {
             Navigator.of(context).pop(); // close dialog
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProfilePage()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const ProfilePage()));
           },
         ),
       );
@@ -147,9 +145,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       // Tampilkan error dari backend
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(content: Text(result.message)),
-        );
+        ..showSnackBar(SnackBar(content: Text(result.message)));
     }
   }
 
@@ -196,7 +192,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
             // Bagian atas: scroll → Shipping & Payment
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -216,7 +215,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ],
         ),
       ),
-
     );
   }
 
@@ -373,15 +371,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                const Icon(Icons.check_circle,
-                    size: 18, color: Color(0xFF7E8073)),
+                const Icon(
+                  Icons.check_circle,
+                  size: 18,
+                  color: Color(0xFF7E8073),
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'Cash on Delivery (COD)',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF3E4038),
-                  ),
+                  style: TextStyle(fontSize: 14, color: Color(0xFF3E4038)),
                 ),
               ],
             ),
@@ -409,10 +407,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     } else if (_summaryError != null) {
       content = Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Text(
-          _summaryError!,
-          style: const TextStyle(color: Colors.red),
-        ),
+        child: Text(_summaryError!, style: const TextStyle(color: Colors.red)),
       );
     } else if (_summary == null || _summary!.items.isEmpty) {
       content = const Padding(
@@ -483,8 +478,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFE6E7E1)),
               ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Column(
                 children: s.items.map((item) {
                   return Padding(
@@ -564,16 +558,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
               Text(
                 _formatCurrency(s.total),
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ],
           ),
         ],
       );
     }
-
 
     return Container(
       width: double.infinity,
@@ -610,8 +601,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed:
-                    _isSubmitting || _isLoadingSummary ? null : _onPlaceOrder,
+                onPressed: _isSubmitting || _isLoadingSummary
+                    ? null
+                    : _onPlaceOrder,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF7E8073),
                   foregroundColor: Colors.white,
@@ -624,7 +616,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Text(
@@ -639,7 +633,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
-
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
@@ -653,10 +646,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF3E4038),
-          ),
+          style: const TextStyle(fontSize: 12, color: Color(0xFF3E4038)),
         ),
         const SizedBox(height: 4),
         TextFormField(
@@ -666,24 +656,26 @@ class _CheckoutPageState extends State<CheckoutPage> {
           validator: requiredField ? validator : null,
           decoration: InputDecoration(
             isDense: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide:
-                  const BorderSide(color: Color(0xFFD9DBD0), width: 1),
+              borderSide: const BorderSide(color: Color(0xFFD9DBD0), width: 1),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide:
-                  const BorderSide(color: Color(0xFFD9DBD0), width: 1),
+              borderSide: const BorderSide(color: Color(0xFFD9DBD0), width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide:
-                  const BorderSide(color: Color(0xFFC9CCBF), width: 1.4),
+              borderSide: const BorderSide(
+                color: Color(0xFFC9CCBF),
+                width: 1.4,
+              ),
             ),
           ),
         ),
