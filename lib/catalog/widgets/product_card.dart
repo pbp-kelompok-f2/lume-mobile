@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:intl/intl.dart';
 import 'package:lume_mobile/catalog/screens/product_detail_page.dart';
+import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/providers/cart_provider.dart'; // Pastikan import provider
@@ -25,49 +26,61 @@ class _AppProductCardState extends State<AppProductCard> {
   final GlobalKey widgetKey = GlobalKey(); 
 
   void _handleAddToCart(CookieRequest request) async {
-    // Hapus animasi dari sini, kita pindahkan ke bawah setelah request sukses
-    
-    // Kirim Request ke Server
-    try {
-      final response = await request.postJson(
-        "http://localhost:8000/cart/flutter/add/", // Ganti 10.0.2.2 jika emulator
-        jsonEncode(<String, dynamic>{
-          'product_id': widget.product.id,
-          'quantity': 1,
-        }),
-      );
-
-      if (mounted) {
-        if (response['ok'] == true) {
-          // --- SUKSES: BARU JALANKAN ANIMASI ---
-          widget.runAnimation(widgetKey);
-          
-          // Update badge cart
-          context.read<CartProvider>().fetchCartCount(request);
-
-          // Optional: Hapus snackbar success jika animasi sudah cukup mewakili
-          // atau biarkan tetap ada sebagai konfirmasi teks
-          /* ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Added to cart"), duration: Duration(seconds: 1)),
-          ); */
-        } else {
-          // --- GAGAL: TAMPILKAN ERROR (TANPA ANIMASI) ---
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message'] ?? "Failed to add"), 
-              backgroundColor: Colors.red
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-        );
-      }
-    }
+  // 1. Cek dulu: user udah login belum?
+  if (!request.loggedIn) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please log in before adding items to your cart."),
+      ),
+    );
+    return; // jangan lanjut call API
   }
+
+  // 2. Kalau sudah login -> baru call server
+  try {
+    final response = await request.postJson(
+      "http://localhost:8000/cart/flutter/add/",
+      jsonEncode(<String, dynamic>{
+        'product_id': widget.product.id,
+        'quantity': 1,
+      }),
+    );
+
+    if (!mounted) return;
+
+    if (response['ok'] == true) {
+      // sukses → animasi + update badge
+      widget.runAnimation(widgetKey);
+      context.read<CartProvider>().fetchCartCount(request);
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("${widget.product.name} added to cart!"),
+          backgroundColor: LumeColors.sageGreen,
+        ),
+      );
+    } else {
+      // ❌ gagal (misal dari backend: out of stock, harus login, dll.)
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message'] ?? "Failed to add"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Error: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
