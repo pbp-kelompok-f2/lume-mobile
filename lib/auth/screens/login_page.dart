@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/auth/screens/register_page.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
+import 'package:lume_mobile/admin/screens/admin_home_page.dart';
 
 class LoginPage extends StatefulWidget {
   // dipakai untuk menentukan apakah perlu tampilkan tombol back
@@ -115,54 +116,62 @@ class _LoginPageState extends State<LoginPage> {
                             },
                           );
 
-                          if (response.containsKey('ok') &&
-                              response['ok'] == true) {
-                            if (context.mounted) {
-                              String user =
-                                  response['username'] ?? username;
-                              context
-                                  .read<UserProvider>()
-                                  .setUsername(user);
+                          if (request.loggedIn) {
+          if (context.mounted) {
+            // --- LOGIKA BARU DI SINI ---
+            
+            // 1. Ambil data dari response JSON (sesuai struktur Django yang baru)
+            // Struktur: { "ok": true, "user": { "username": "...", "is_staff": true } }
+            final userData = response['user']; 
+            String user = userData['username'];
+            bool isAdmin = userData['is_staff'] ?? false; // Default false jika null
 
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Login successful!"),
-                                  backgroundColor: LumeColors.sageGreen,
-                                ),
-                              );
+            // 2. Simpan ke Provider
+            context.read<UserProvider>().setUsername(user, isAdmin: isAdmin);
 
-                              // setelah login, ganti ke MainScaffold
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const MainScaffold(),
-                                ),
-                              );
-                            }
-                          } else {
-                            if (context.mounted) {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Login Failed'),
-                                  content: Text(
-                                    response['message'] ??
-                                        "Invalid credentials",
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      child: const Text('OK'),
-                                      onPressed: () =>
-                                          Navigator.pop(context),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          }
-                          setState(() => _isLoading = false);
-                        },
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Login successful!"),
+                backgroundColor: LumeColors.sageGreen,
+              ),
+            );
+
+            // 3. Navigasi Berdasarkan Role
+            if (isAdmin) {
+              // Jika Admin -> Ke Admin Dashboard
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AdminHomePage()),
+              );
+            } else {
+              // Jika User Biasa -> Ke Main Scaffold
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const MainScaffold()),
+              );
+            }
+          }
+        } else {
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Login Failed'),
+                content: Text(
+                  response['detail'] ?? "Invalid credentials", // API kadang kirim 'detail' atau 'message'
+                ),
+                actions: [
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+        setState(() => _isLoading = false);
+      },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: LumeColors.darkGreen,
                     shape: RoundedRectangleBorder(
