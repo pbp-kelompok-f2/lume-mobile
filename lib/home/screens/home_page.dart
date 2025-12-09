@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lume_mobile/booking_kelas/widgets/class_card.dart'; 
-import 'package:lume_mobile/models/booking_kelas.dart'; 
+import 'package:lume_mobile/booking_kelas/widgets/class_card.dart';
+import 'package:lume_mobile/models/booking_kelas.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/catalog/widgets/product_card.dart';
 import 'package:lume_mobile/home/widgets/home_banner.dart';
@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
       '3': 'Thursday',
       '4': 'Friday',
       '5': 'Saturday',
-      '6': 'Sunday'
+      '6': 'Sunday',
     };
     return map[dayCode] ?? dayCode;
   }
@@ -53,8 +53,9 @@ class _HomePageState extends State<HomePage> {
 
   // 1. FETCH FEATURED PRODUCTS
   Future<List<Product>> fetchFeaturedProducts(CookieRequest request) async {
-    final response = await request
-        .get('http://localhost:8000/catalog/api/products/?limit=5');
+    final response = await request.get(
+      'http://localhost:8000/catalog/api/products/?limit=5',
+    );
     var data = response;
     List<Product> listProduct = [];
     if (data['results'] != null) {
@@ -68,10 +69,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   // 2. FETCH POPULAR CLASSES
-  Future<List<ClassSession>> fetchPopularClasses(
-      CookieRequest request) async {
-    final response =
-        await request.get('http://127.0.0.1:8000/bookingkelas/json/');
+  Future<List<ClassSession>> fetchPopularClasses(CookieRequest request) async {
+    final response = await request.get(
+      'http://localhost:8000/bookingkelas/json/',
+    );
 
     List<ClassSession> allSessions = [];
     // Handle format JSON dari Django
@@ -154,10 +155,9 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ).then((_) {
                             if (context.mounted) {
-                              context
-                                  .read<CartProvider>()
-                                  .fetchCartCount(
-                                      context.read<CookieRequest>());
+                              context.read<CartProvider>().fetchCartCount(
+                                context.read<CookieRequest>(),
+                              );
                             }
                           });
                         },
@@ -166,37 +166,39 @@ class _HomePageState extends State<HomePage> {
                           badgeOptions: const BadgeOptions(
                             active: false, // kita pakai badge custom sendiri
                           ),
-                          icon:
-                              Consumer<CartProvider>(builder: (context, cartProvider, child) {
-                            Widget cartIcon = Container(
-                              height: 44,
-                              width: 44,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border:
-                                    Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: const Icon(
-                                Icons.shopping_cart_outlined,
-                                color: LumeColors.darkText,
-                              ),
-                            );
+                          icon: Consumer<CartProvider>(
+                            builder: (context, cartProvider, child) {
+                              Widget cartIcon = Container(
+                                height: 44,
+                                width: 44,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.shopping_cart_outlined,
+                                  color: LumeColors.darkText,
+                                ),
+                              );
 
-                            if (!request.loggedIn ||
-                                cartProvider.counter <= 0) {
-                              return cartIcon;
-                            }
+                              if (!request.loggedIn ||
+                                  cartProvider.counter <= 0) {
+                                return cartIcon;
+                              }
 
-                            return Badge(
-                              label: Text(
-                                '${cartProvider.counter}',
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                              backgroundColor: LumeColors.darkGreen,
-                              child: cartIcon,
-                            );
-                          }),
+                              return Badge(
+                                label: Text(
+                                  '${cartProvider.counter}',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                backgroundColor: LumeColors.darkGreen,
+                                child: cartIcon,
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ],
@@ -217,36 +219,45 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 32),
 
                   // === FEATURED PRODUCTS SECTION ===
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFA3A89D),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
+                  GestureDetector(
+                    // <--- 1. Bungkus dengan GestureDetector
+                    onTap: () {
+                      widget.onNavigateTo(
+                        1,
+                      ); // <--- 2. Arahkan ke Tab Index 1 (Product)
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Featured Products",
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFA3A89D),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
                         ),
-                        const Icon(Icons.chevron_right, color: Colors.white),
-                      ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Featured Products",
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, color: Colors.white),
+                        ],
+                      ),
                     ),
                   ),
                   Container(
                     width: double.infinity,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 20),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.only(
@@ -258,7 +269,7 @@ class _HomePageState extends State<HomePage> {
                           color: Colors.black12,
                           blurRadius: 10,
                           offset: Offset(0, 5),
-                        )
+                        ),
                       ],
                     ),
                     child: SizedBox(
@@ -269,7 +280,8 @@ class _HomePageState extends State<HomePage> {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return const Center(
-                                child: CircularProgressIndicator());
+                              child: CircularProgressIndicator(),
+                            );
                           } else if (!snapshot.hasData ||
                               snapshot.data!.isEmpty) {
                             return const Center(
@@ -283,7 +295,8 @@ class _HomePageState extends State<HomePage> {
                             return ListView.builder(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 20),
+                                horizontal: 20,
+                              ),
                               itemCount: products.length,
                               itemBuilder: (context, index) {
                                 return Container(
@@ -322,14 +335,11 @@ class _HomePageState extends State<HomePage> {
                   FutureBuilder<List<ClassSession>>(
                     future: fetchPopularClasses(request),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(
-                            child: CircularProgressIndicator());
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
                       } else if (snapshot.hasError) {
                         return Text("Error: ${snapshot.error}");
-                      } else if (!snapshot.hasData ||
-                          snapshot.data!.isEmpty) {
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return const Center(
                           child: Text(
                             "Belum ada jadwal kelas tersedia.",
@@ -341,8 +351,7 @@ class _HomePageState extends State<HomePage> {
                         return Column(
                           children: [
                             ListView.builder(
-                              physics:
-                                  const NeverScrollableScrollPhysics(),
+                              physics: const NeverScrollableScrollPhysics(),
                               shrinkWrap: true,
                               itemCount: sessions.length,
                               itemBuilder: (context, index) {
@@ -374,19 +383,16 @@ class _HomePageState extends State<HomePage> {
                             Center(
                               child: InkWell(
                                 onTap: () {
-                                  widget.onNavigateTo(
-                                      2); // Tab Classes
+                                  widget.onNavigateTo(2); // Tab Classes
                                 },
-                                borderRadius:
-                                    BorderRadius.circular(30),
+                                borderRadius: BorderRadius.circular(30),
                                 child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(
-                                          horizontal: 32,
-                                          vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 32,
+                                    vertical: 12,
+                                  ),
                                   decoration: BoxDecoration(
-                                    borderRadius:
-                                        BorderRadius.circular(30),
+                                    borderRadius: BorderRadius.circular(30),
                                     gradient: const LinearGradient(
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
@@ -397,11 +403,10 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black
-                                            .withOpacity(0.15),
+                                        color: Colors.black.withOpacity(0.15),
                                         offset: const Offset(0, 4),
                                         blurRadius: 8,
-                                      )
+                                      ),
                                     ],
                                   ),
                                   child: Row(
@@ -412,8 +417,7 @@ class _HomePageState extends State<HomePage> {
                                         style: GoogleFonts.inter(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w600,
-                                          color:
-                                              const Color(0xFF273225),
+                                          color: const Color(0xFF273225),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
