@@ -41,8 +41,10 @@ class _ClassListPageState extends State<ClassListPage> {
   // Helper: Membersihkan judul (Sesuai views.py _base_title)
   // Misal: "Pilates - Rp50.000" -> "Pilates"
   String _baseTitle(String title) {
-    if (title.contains(' - ')) {
-      return title.split(' - ').first;
+    int lastIndex = title.lastIndexOf(' - ');
+    if (lastIndex != -1) {
+      // Ambil string dari awal sampai sebelum tanda ' - ' terakhir
+      return title.substring(0, lastIndex);
     }
     return title;
   }

@@ -34,8 +34,9 @@ class _HomePageState extends State<HomePage> {
 
   // Helper: Membersihkan judul
   String _baseTitle(String title) {
-    if (title.contains(' - ')) {
-      return title.split(' - ').first;
+    int lastIndex = title.lastIndexOf(' - ');
+    if (lastIndex != -1) {
+      return title.substring(0, lastIndex);
     }
     return title;
   }

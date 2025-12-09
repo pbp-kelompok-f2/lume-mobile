@@ -9,6 +9,7 @@ class ClassCard extends StatelessWidget {
   final List<String> daysNames; // List nama hari (Monday, Tuesday...)
   final Map<String, int> dailySessionMap; // Map untuk modal Daily
   final VoidCallback onRefresh;
+  final bool isPopular;
 
   const ClassCard({
     super.key,
@@ -17,6 +18,7 @@ class ClassCard extends StatelessWidget {
     required this.daysNames,
     required this.dailySessionMap,
     required this.onRefresh,
+    this.isPopular = false,
   });
 
   @override
