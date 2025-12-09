@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeBanner extends StatelessWidget {
-  // 1. Tambahkan callback function
+  // Callback function untuk kedua tombol
   final VoidCallback onShopNow; 
+  final VoidCallback onBookClass; // <-- 1. Tambah ini
 
   const HomeBanner({
     super.key, 
-    required this.onShopNow, // 2. Wajib diisi saat dipanggil
+    required this.onShopNow,
+    required this.onBookClass, // <-- 2. Wajib diisi
   });
 
   @override
@@ -25,7 +27,6 @@ class HomeBanner extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // ... (Bagian Gradient sama seperti sebelumnya) ...
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
@@ -56,22 +57,26 @@ class HomeBanner extends StatelessWidget {
                 // Buttons Row
                 Row(
                   children: [
-                    // Book Class Button
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Text("Book a Class",
-                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF6E7D6B)),
+                    // --- BUTTON BOOK CLASS (DI-UPDATE) ---
+                    InkWell(
+                      onTap: onBookClass, // <-- 3. Panggil callback saat ditekan
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Text("Book a Class",
+                          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: const Color(0xFF6E7D6B)),
+                        ),
                       ),
                     ),
+                    
                     const SizedBox(width: 12),
                     
-                    // --- BUTTON SHOP PRODUCTS (YANG DI-UPDATE) ---
+                    // --- BUTTON SHOP PRODUCTS ---
                     InkWell(
-                      onTap: onShopNow, // 3. Panggil callback saat ditekan
+                      onTap: onShopNow,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         decoration: BoxDecoration(

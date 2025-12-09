@@ -41,15 +41,17 @@ class _ClassListPageState extends State<ClassListPage> {
   // Helper: Membersihkan judul (Sesuai views.py _base_title)
   // Misal: "Pilates - Rp50.000" -> "Pilates"
   String _baseTitle(String title) {
-    if (title.contains(' - ')) {
-      return title.split(' - ').first;
+    int lastIndex = title.lastIndexOf(' - ');
+    if (lastIndex != -1) {
+      // Ambil string dari awal sampai sebelum tanda ' - ' terakhir
+      return title.substring(0, lastIndex);
     }
     return title;
   }
 
   Future<List<ProcessedSession>> fetchAndProcessClasses(CookieRequest request) async {
     // Sesuaikan URL (localhost untuk simulator, 10.0.2.2 untuk emulator Android)
-    final response = await request.get('http://localhost:8000/bookingkelas/json/');
+    final response = await request.get('http://127.0.0.1:8000/bookingkelas/json/');
     
     List<ClassSession> allSessions = [];
     if (response is List) {

@@ -10,7 +10,7 @@ import 'package:lume_mobile/checkout/screens/checkout_page.dart';
 import 'package:lume_mobile/auth/screens/login_page.dart'; 
 
 class CartPage extends StatefulWidget {
-  const CartPage({Key? key}) : super(key: key);
+  const CartPage({super.key});
 
   @override
   _CartPageState createState() => _CartPageState();
