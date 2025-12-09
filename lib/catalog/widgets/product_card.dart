@@ -5,7 +5,7 @@ import 'package:lume_mobile/catalog/screens/product_detail_page.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:lume_mobile/providers/cart_provider.dart'; // Pastikan import provider
+import 'package:lume_mobile/providers/cart_provider.dart'; 
 import 'dart:convert';
 
 class AppProductCard extends StatefulWidget {
@@ -32,6 +32,7 @@ class _AppProductCardState extends State<AppProductCard> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Please log in before adding items to your cart."),
+        backgroundColor: Colors.red,
       ),
     );
     return; // jangan lanjut call API
