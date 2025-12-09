@@ -10,7 +10,7 @@ import 'package:lume_mobile/checkout/screens/checkout_page.dart';
 import 'package:lume_mobile/auth/screens/login_page.dart'; 
 
 class CartPage extends StatefulWidget {
-  const CartPage({super.key});
+  const CartPage({Key? key}) : super(key: key);
 
   @override
   _CartPageState createState() => _CartPageState();
@@ -173,12 +173,9 @@ class _CartPageState extends State<CartPage> {
       } else {
         final message =
             response['message'] ?? 'Failed to update selection.';
-         if (mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(message)),
           );
         }
       }
@@ -201,84 +198,118 @@ class _CartPageState extends State<CartPage> {
       );
 
       if (response['ok'] == true) {
-        // backend balikin quantity final (bisa 0 kalau di-delete)
-        final updatedQty = response['quantity'] ?? newQty;
+  // backend balikin quantity final (bisa 0 kalau di-delete)
+  final updatedQty = response['quantity'] ?? newQty;
 
-        setState(() {
-          final index = _cartItems.indexWhere((item) => item.id == itemId);
-          if (index != -1) {
-            if (updatedQty <= 0) {
-              // item dihapus di server → hapus juga di UI
-              _selectedItemIds.remove(itemId);
-              _cartItems.removeAt(index);
-            } else {
-              _cartItems[index].quantity = updatedQty;
-            }
-          }
-        });
-      } else {
-        // kasus: stok kurang, dsb.
-        final message = response['message'] ?? 'Failed to update quantity.';
-        final safeQty = response['quantity'];
+  setState(() {
+    final index = _cartItems.indexWhere((item) => item.id == itemId);
+    if (index != -1) {
+      if (updatedQty <= 0) {
+        // Simpan dulu nama item buat snackbar
+        final removedName = _cartItems[index].productName;
 
-        if (safeQty != null) {
-          setState(() {
-            final index = _cartItems.indexWhere((item) => item.id == itemId);
-            if (index != -1) {
-              _cartItems[index].quantity = safeQty;
-            }
-          });
-        }
+        // item dihapus di server → hapus juga di UI
+        _selectedItemIds.remove(itemId);
+        _cartItems.removeAt(index);
 
+        // Tampilkan snackbar "removed" dengan warna Lume
         if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
+            SnackBar(
+              content: Text('$removedName removed from cart.'),
+              backgroundColor: LumeColors.sageGreen,
+            ),
           );
         }
+      } else {
+        // cuma update jumlah
+        _cartItems[index].quantity = updatedQty;
       }
+    }
+  });
+} else {
+  // kasus: stok kurang, dsb.
+  final message = response['message'] ?? 'Failed to update quantity.';
+  final safeQty = response['quantity'];
+
+  if (safeQty != null) {
+    setState(() {
+      final index = _cartItems.indexWhere((item) => item.id == itemId);
+      if (index != -1) {
+        _cartItems[index].quantity = safeQty;
+      }
+    });
+  }
+
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red, 
+      ),
+    );
+  }
+}
+
     } catch (e) {
       debugPrint("Error updating quantity: $e");
     }
   }
 
   // Delete item (sinkron ke backend)
-  Future<void> _deleteItem(int itemId) async {
-    final request = context.read<CookieRequest>();
+Future<void> _deleteItem(int itemId) async {
+  final request = context.read<CookieRequest>();
 
-    try {
-      final response = await request.postJson(
-        '$baseUrl/cart/flutter/remove/',
-        jsonEncode(<String, dynamic>{
-          'item_id': itemId,
-        }),
-      );
+  try {
+    final response = await request.postJson(
+      '$baseUrl/cart/flutter/remove/',
+      jsonEncode(<String, dynamic>{
+        'item_id': itemId,
+      }),
+    );
 
-       if (response['ok'] == true) {
-        setState(() {
-          _cartItems.removeWhere((item) => item.id == itemId);
-          _selectedItemIds.remove(itemId);
-        });
+    if (response['ok'] == true) {
+      String? removedName;
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Item removed from cart.'),
-              backgroundColor: LumeColors.sageGreen,
+      setState(() {
+        final index = _cartItems.indexWhere((item) => item.id == itemId);
+        if (index != -1) {
+          removedName = _cartItems[index].productName;
+          _cartItems.removeAt(index);
+        }
+        _selectedItemIds.remove(itemId);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              removedName != null
+                  ? '$removedName removed from cart.'
+                  : 'Item removed from cart.',
             ),
-          );
-        }
-      } else {
-        final message = response['message'] ?? 'Failed to remove item.';
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
-        }
+            backgroundColor: LumeColors.sageGreen, 
+          ),
+        );
       }
-    } catch (e) {
-      debugPrint("Error removing item: $e");
+    } else {
+      final message = response['message'] ?? 'Failed to remove item.';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red, 
+          ),
+        );
+      }
     }
+  } catch (e) {
+    debugPrint("Error removing item: $e");
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

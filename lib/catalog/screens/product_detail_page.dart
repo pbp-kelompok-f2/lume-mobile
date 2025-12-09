@@ -29,6 +29,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Please log in before adding items to your cart."),
+        backgroundColor: Colors.red,
       ),
     );
     return;
