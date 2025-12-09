@@ -52,7 +52,6 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.spa, size: 80, color: LumeColors.darkGreen),
               const SizedBox(height: 20),
               const Text(
                 "Welcome Back",
@@ -125,9 +124,10 @@ class _LoginPageState extends State<LoginPage> {
             final userData = response['user']; 
             String user = userData['username'];
             bool isAdmin = userData['is_staff'] ?? false; // Default false jika null
+            String picUrl = userData['profile_picture'] ?? "";
 
             // 2. Simpan ke Provider
-            context.read<UserProvider>().setUsername(user, isAdmin: isAdmin);
+            context.read<UserProvider>().setUsername(user, isAdmin: isAdmin, profilePicture: picUrl);
 
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
