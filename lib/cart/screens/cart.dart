@@ -10,7 +10,7 @@ import 'package:lume_mobile/checkout/screens/checkout_page.dart';
 import 'package:lume_mobile/auth/screens/login_page.dart'; 
 
 class CartPage extends StatefulWidget {
-  const CartPage({Key? key}) : super(key: key);
+  const CartPage({super.key});
 
   @override
   _CartPageState createState() => _CartPageState();
@@ -173,9 +173,12 @@ class _CartPageState extends State<CartPage> {
       } else {
         final message =
             response['message'] ?? 'Failed to update selection.';
-        if (mounted) {
+         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -250,7 +253,7 @@ class _CartPageState extends State<CartPage> {
         }),
       );
 
-      if (response['ok'] == true) {
+       if (response['ok'] == true) {
         setState(() {
           _cartItems.removeWhere((item) => item.id == itemId);
           _selectedItemIds.remove(itemId);
@@ -258,7 +261,10 @@ class _CartPageState extends State<CartPage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Item removed from cart.')),
+            const SnackBar(
+              content: Text('Item removed from cart.'),
+              backgroundColor: LumeColors.sageGreen,
+            ),
           );
         }
       } else {
@@ -595,6 +601,7 @@ class _CartPageState extends State<CartPage> {
                 fontSize: 16,
                 color: LumeColors.darkText,
               ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -627,8 +634,6 @@ class _CartPageState extends State<CartPage> {
                 ),
                 elevation: 0,
               ),
-              elevation: 0,
-            ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

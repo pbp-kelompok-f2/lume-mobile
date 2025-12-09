@@ -23,55 +23,64 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   final GlobalKey imageKey = GlobalKey();
   late Function(GlobalKey) runAddToCartAnimation;
 
-  void _addToCart(CookieRequest request) async {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  Future<void> _addToCart(CookieRequest request) async {
+  // 1. Guest → suruh login dulu
+  if (!request.loggedIn) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Processing..."), duration: Duration(milliseconds: 500)),
+      const SnackBar(
+        content: Text("Please log in before adding items to your cart."),
+      ),
+    );
+    return;
+  }
+
+  try {
+    final response = await request.postJson(
+      "http://localhost:8000/cart/flutter/add/",
+      jsonEncode(<String, dynamic>{
+        'product_id': widget.product.id,
+        'quantity': 1,
+      }),
     );
 
-    try {
-      final response = await request.postJson(
-        "http://localhost:8000/cart/flutter/add/",
-        jsonEncode(<String, dynamic>{
-          'product_id': widget.product.id,
-          'quantity': 1,
-        }),
+    if (!mounted) return;
+
+    if (response['ok'] == true) {
+      // sukses -> animasi + update badge + snackbar hijau
+      runAddToCartAnimation(imageKey);
+      context.read<CartProvider>().fetchCartCount(request);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("${widget.product.name} added to cart!"),
+          backgroundColor: LumeColors.sageGreen,
+        ),
       );
-
-      if (mounted) {
-        if (response['ok'] == true) {
-          runAddToCartAnimation(imageKey);
-          context.read<CartProvider>().fetchCartCount(request);
-
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("${widget.product.name} added to cart!"),
-              backgroundColor: LumeColors.sageGreen,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message'] ?? "Failed to add"),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-        );
-      }
+    } else {
+      // gagal -> pakai message dari backend (mis. "Exceeding stock. Only X left.")
+      final msg = response['message'] ?? "Failed to add item to cart.";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Error: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
-    final request = context.read<CookieRequest>();
+    final request = context.watch<CookieRequest>();
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0
     );
@@ -108,52 +117,66 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
           ),
           actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CartPage()),
-                  ).then((_) => context.read<CartProvider>().fetchCartCount(request));
-                },
-                child: AddToCartIcon(
-                  key: cartKey,
-                  badgeOptions: const BadgeOptions(
-                    active: false, // Disable built-in badge
-                  ),
-                  icon: Consumer<CartProvider>(
-                    builder: (context, cartProvider, child) {
-                      Widget iconBtn = Container(
-                        height: 44, width: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText, size: 24),
-                        ),
-                      );
-
-                      // Only show badge if counter > 0
-                      if (cartProvider.counter > 0) {
-                        return Badge(
-                          label: Text(
-                            "${cartProvider.counter}",
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: LumeColors.darkGreen,
-                          child: iconBtn,
-                        );
-                      }
-                      return iconBtn;
-                    },
-                  ),
+  Padding(
+    padding: const EdgeInsets.only(right: 16.0),
+    child: GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CartPage()),
+        ).then((_) {
+          // Hanya fetch kalau user lagi login
+          final req = context.read<CookieRequest>();
+          if (req.loggedIn) {
+            context.read<CartProvider>().fetchCartCount(req);
+          }
+        });
+      },
+      child: AddToCartIcon(
+        key: cartKey,
+        badgeOptions: const BadgeOptions(
+          active: false, // Disable built-in badge
+        ),
+        icon: Consumer<CartProvider>(
+          builder: (context, cartProvider, child) {
+            Widget iconBtn = Container(
+              height: 44,
+              width: 44,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.shopping_cart_outlined,
+                  color: LumeColors.darkText,
+                  size: 24,
                 ),
               ),
-            ),
-          ],
+            );
+
+            // ❗ Guest ATAU counter 0 → icon polos
+            if (!request.loggedIn || cartProvider.counter <= 0) {
+              return iconBtn;
+            }
+
+            // ✅ Login + ada item → pakai badge hijau
+            return Badge(
+              label: Text(
+                "${cartProvider.counter}",
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: LumeColors.darkGreen,
+              child: iconBtn,
+            );
+          },
+        ),
+      ),
+    ),
+  ),
+],
+
         ),
         extendBodyBehindAppBar: true,
 
