@@ -114,7 +114,7 @@ class _AppProductCardState extends State<AppProductCard> {
                 // --- BAGIAN FOTO (Key Animasi di sini) ---
                 AspectRatio(
                   aspectRatio: 1.0, 
-                  child: SizedBox(
+                  child: Container(
                     key: widgetKey, // SUMBER ANIMASI
                     width: double.infinity,
                     child: Stack(

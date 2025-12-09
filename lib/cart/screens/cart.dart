@@ -173,9 +173,12 @@ class _CartPageState extends State<CartPage> {
       } else {
         final message =
             response['message'] ?? 'Failed to update selection.';
-        if (mounted) {
+         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -250,7 +253,7 @@ class _CartPageState extends State<CartPage> {
         }),
       );
 
-      if (response['ok'] == true) {
+       if (response['ok'] == true) {
         setState(() {
           _cartItems.removeWhere((item) => item.id == itemId);
           _selectedItemIds.remove(itemId);
@@ -258,7 +261,10 @@ class _CartPageState extends State<CartPage> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Item removed from cart.')),
+            const SnackBar(
+              content: Text('Item removed from cart.'),
+              backgroundColor: LumeColors.sageGreen,
+            ),
           );
         }
       } else {
