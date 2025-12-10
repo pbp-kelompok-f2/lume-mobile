@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 class ProcessedSession {
   final ClassSession session; // Instance representatif (biasanya yang pertama)
   final String baseTitle;
-  final Map<String, int> dailyMap; // Map Nama Hari -> ID Sesi (Untuk Daily)
+  final Map<String, ClassSession> dailyMap; // Map Nama Hari -> ID Sesi (Untuk Daily)
   final Set<String> daysNames; // List nama hari untuk ditampilkan (Badge)
 
   ProcessedSession({
@@ -51,7 +51,7 @@ class _ClassListPageState extends State<ClassListPage> {
 
   Future<List<ProcessedSession>> fetchAndProcessClasses(CookieRequest request) async {
     // Sesuaikan URL (localhost untuk simulator, 10.0.2.2 untuk emulator Android)
-    final response = await request.get('http://127.0.0.1:8000/bookingkelas/json/');
+    final response = await request.get('http://localhost:8000/bookingkelas/json/');
     
     List<ClassSession> allSessions = [];
     if (response is List) {
@@ -92,7 +92,7 @@ class _ClassListPageState extends State<ClassListPage> {
       if (s.category.toLowerCase() == 'daily') {
         // Asumsi Daily per row cuma punya 1 hari, tapi kita loop jg utk aman
         for (var dayName in currentDayNames) {
-           group.dailyMap[dayName] = s.id;
+           group.dailyMap[dayName] = s;
         }
       } else {
         // Jika Weekly, ID nya pakai instance ini (biasanya weekly 1 row = banyak hari)
