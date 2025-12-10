@@ -1,13 +1,16 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:lume_mobile/auth/screens/login_page.dart'; // ✅ Import Login Page
 import 'package:lume_mobile/models/booking_kelas.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
 class ClassCard extends StatelessWidget {
   final ClassSession session;
-  final String baseTitle; // Judul bersih (tanpa harga)
-  final List<String> daysNames; // List nama hari (Monday, Tuesday...)
-  final Map<String, int> dailySessionMap; // Map untuk modal Daily
+  final String baseTitle;
+  final List<String> daysNames;
+  final Map<String, ClassSession> dailySessionMap;
   final VoidCallback onRefresh;
   final bool isPopular;
 
@@ -25,37 +28,44 @@ class ClassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
 
-    // Cek Kategori
     bool isDaily = session.category.toLowerCase() == 'daily';
     bool isWeekly = session.category.toLowerCase() == 'weekly';
 
-    // Warna dari HTML/CSS
-    const Color cardBg = Color(0xFFE9E3D6); // bg-[#E9E3D6]
-    const Color borderColor = Color(0xFFCFC8BA); // border-[#CFC8BA]
-    const Color textDark = Color(0xFF171717); // text-neutral-900
-    const Color textGray = Color(0xFF374151); // text-gray-700
-    const Color labelColor = Color(0xFFA8A29E); // text-stone-400
+    // Warna Card
+    const Color cardBg = Color(0xFFE9E3D6);
+    const Color borderColor = Color(0xFFCFC8BA);
+    const Color textDark = Color(0xFF171717);
+    const Color textGray = Color(0xFF374151);
+    const Color labelColor = Color(0xFFA8A29E);
 
-    // Format Harga
     final String priceStr =
         "Rp ${session.price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}";
+
+    String dayLabel;
+    if (isPopular) {
+      dayLabel = "Day:";
+    } else if (isDaily) {
+      dayLabel = "Days to Choose:";
+    } else {
+      dayLabel = "Days to Attend:";
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(18), // rounded-[18px]
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 4,
-            offset: Offset(0, 2), // shadow-md
+            offset: Offset(0, 2),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0), // p-4
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -69,9 +79,9 @@ class ClassCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        baseTitle, // Menggunakan judul bersih
-                        style: const TextStyle(
-                          fontSize: 20, // text-[20px]
+                        baseTitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: textDark,
                           height: 1.2,
@@ -81,13 +91,13 @@ class ClassCard extends StatelessWidget {
                       Text.rich(
                         TextSpan(
                           text: "By ",
-                          style: const TextStyle(fontSize: 14, color: textGray),
+                          style: GoogleFonts.inter(fontSize: 14, color: textGray),
                           children: [
                             TextSpan(
                               text: session.instructor,
-                              style: const TextStyle(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF293027),
+                                color: const Color(0xFF293027),
                               ),
                             ),
                           ],
@@ -96,14 +106,13 @@ class ClassCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Badge Category
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F4), // bg-stone-100
+                    color: const Color(0xFFF5F5F4),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: const [
                       BoxShadow(color: Colors.black12, offset: Offset(0, 1)),
@@ -111,7 +120,7 @@ class ClassCard extends StatelessWidget {
                   ),
                   child: Text(
                     session.category.toUpperCase(),
-                    style: const TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -122,8 +131,7 @@ class ClassCard extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // --- GRID INFO (Time, Price, Room, Capacity) ---
-            // Menggunakan Wrap/Row simulasi Grid
+            // --- GRID INFO ---
             Row(
               children: [
                 Expanded(
@@ -138,8 +146,7 @@ class ClassCard extends StatelessWidget {
                 Expanded(
                   child: _buildInfoItem("Room", session.room, labelColor),
                 ),
-                // Capacity hanya muncul jika WEEKLY (sesuai HTML)
-                if (isWeekly)
+                if (isWeekly || isPopular)
                   Expanded(
                     child: _buildInfoItem(
                       "Capacity",
@@ -156,8 +163,8 @@ class ClassCard extends StatelessWidget {
 
             // --- DAYS LIST ---
             Text(
-              isDaily ? "Days to Choose:" : "Days to Attend:",
-              style: const TextStyle(color: labelColor, fontSize: 14),
+              dayLabel,
+              style: GoogleFonts.inter(color: labelColor, fontSize: 14),
             ),
             const SizedBox(height: 6),
             Wrap(
@@ -165,10 +172,10 @@ class ClassCard extends StatelessWidget {
               runSpacing: 6,
               children: daysNames.isNotEmpty
                   ? daysNames.map((d) => _buildDayBadge(d)).toList()
-                  : [const Text("—", style: TextStyle(color: Colors.grey))],
+                  : [Text("—", style: GoogleFonts.inter(color: Colors.grey))],
             ),
 
-            const SizedBox(height: 24), // mt-auto pt-4
+            const SizedBox(height: 24),
             // --- BUTTONS ---
             _buildActionButton(context, request, isDaily),
           ],
@@ -181,10 +188,10 @@ class ClassCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: labelColor, fontSize: 13)),
+        Text(label, style: GoogleFonts.inter(color: labelColor, fontSize: 13)),
         Text(
           value,
-          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          style: GoogleFonts.inter(fontSize: 14, color: Colors.black87),
         ),
       ],
     );
@@ -194,8 +201,8 @@ class ClassCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F4), // bg-stone-100
-        border: Border.all(color: const Color(0xFFD6D3D1)), // border-stone-300
+        color: const Color(0xFFF5F5F4),
+        border: Border.all(color: const Color(0xFFD6D3D1)),
         borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1)),
@@ -203,7 +210,7 @@ class ClassCard extends StatelessWidget {
       ),
       child: Text(
         day,
-        style: const TextStyle(
+        style: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
@@ -217,37 +224,70 @@ class ClassCard extends StatelessWidget {
     CookieRequest request,
     bool isDaily,
   ) {
-    // Style Button dari HTML
-    // bg-[#D7D6D1] border-[#C9C7C0] text-[#5C5B57] hover:bg-[#CECDC8]
     final ButtonStyle style = ElevatedButton.styleFrom(
       backgroundColor: const Color(0xFFD7D6D1),
       foregroundColor: const Color(0xFF5C5B57),
       elevation: 0,
-      shadowColor: Colors
-          .black, // simulasi shadow-[0_1px_0_#0f0f0f] agak susah di flutter exact match
+      shadowColor: Colors.black,
       padding: const EdgeInsets.symmetric(vertical: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: Color(0xFFC9C7C0)),
       ),
+      textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
     );
 
-    // Cek Full
     bool isFull = session.capacityCurrent >= session.capacityMax;
-    // Logika Web: Weekly yg full -> Unavailable (kecuali daily, daily capacity dicek pas pilih hari)
-    // Tapi di HTML, 'Unavailable' cuma muncul di blok 'else' paling bawah (jika tidak daily dan tidak ada instance_id).
-    // Kita asumsikan tombol disable jika full untuk weekly.
 
+    // Helper function untuk cek login sebelum aksi
+    void checkAuthAndProceed(VoidCallback action) {
+      if (!request.loggedIn) {
+        // ✅ Jika belum login, arahkan ke LoginPage
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      } else {
+        // ✅ Jika sudah login, jalankan aksi (booking/modal)
+        action();
+      }
+    }
+
+    // LOGIKA POPULAR HOME PAGE (Langsung Book)
+    if (isPopular && dailySessionMap.length == 1) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: isFull
+              ? null
+              : () {
+                  checkAuthAndProceed(() {
+                    final sessionToBook = dailySessionMap.values.first;
+                    _handleBookingDirectly(context, request, sessionToBook.id);
+                  });
+                },
+          style: style.copyWith(
+            backgroundColor: isFull
+                ? WidgetStateProperty.all(Colors.grey[300])
+                : null,
+          ),
+          child: Text(isFull ? "Unavailable" : "Book Now"),
+        ),
+      );
+    }
+
+    // LOGIKA CATALOG PAGE (Daily -> Modal)
     if (isDaily) {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () => _showDaySelectionDialog(context, request),
+          onPressed: () {
+            checkAuthAndProceed(() {
+              _showDaySelectionDialogStyled(context, request);
+            });
+          },
           style: style,
-          child: const Text(
-            "Choose Day",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
+          child: const Text("Choose Day"),
         ),
       );
     } else {
@@ -257,101 +297,146 @@ class ClassCard extends StatelessWidget {
         child: ElevatedButton(
           onPressed: isFull
               ? null
-              : () => _handleBooking(context, request, session.id),
+              : () {
+                  checkAuthAndProceed(() {
+                    _handleBooking(context, request, session.id);
+                  });
+                },
           style: style.copyWith(
             backgroundColor: isFull
                 ? WidgetStateProperty.all(Colors.grey[300])
                 : null,
           ),
-          child: Text(
-            isFull ? "Unavailable" : "Book Now",
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
+          child: Text(isFull ? "Unavailable" : "Book Now"),
         ),
       );
     }
   }
 
-  // --- LOGIC: Modal Pemilihan Hari (Daily) ---
-  void _showDaySelectionDialog(BuildContext context, CookieRequest request) {
-    // Gunakan daysNames dan dailySessionMap yang sudah di-process di ClassListPage
-    // agar opsi yang muncul SESUAI dengan data di database (bukan hardcode Senin-Sabtu semua)
-
-    // Sort urutan hari biar rapi (Senin -> Minggu)
+  // ===========================================================================
+  // ✅ MODAL PEMILIHAN HARI (SORTED SENIN-SABTU & STYLED)
+  // ===========================================================================
+  void _showDaySelectionDialogStyled(BuildContext context, CookieRequest request) {
     final sortedDays = dailySessionMap.keys.toList();
-    // Logic sorting manual sederhana berdasarkan nama hari
+    
+    // ✅ Map urutan hari (Support Inggris & Indonesia)
     const dayOrder = {
-      'Monday': 1,
-      'Tuesday': 2,
-      'Wednesday': 3,
-      'Thursday': 4,
-      'Friday': 5,
-      'Saturday': 6,
-      'Sunday': 7,
+      'monday': 1, 'senin': 1,
+      'tuesday': 2, 'selasa': 2,
+      'wednesday': 3, 'rabu': 3,
+      'thursday': 4, 'kamis': 4,
+      'friday': 5, 'jumat': 5,
+      'saturday': 6, 'sabtu': 6,
+      'sunday': 7, 'minggu': 7,
     };
-    sortedDays.sort((a, b) => (dayOrder[a] ?? 10).compareTo(dayOrder[b] ?? 10));
 
-    String? selectedDayName;
+    // Sorting Logic
+    sortedDays.sort((a, b) {
+      int orderA = dayOrder[a.toLowerCase()] ?? 10;
+      int orderB = dayOrder[b.toLowerCase()] ?? 10;
+      return orderA.compareTo(orderB);
+    });
+
+    ClassSession? selectedSession;
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              backgroundColor: const Color(0xFFFBF7F5),
-              title: const Text(
-                "Select Day",
-                style: TextStyle(color: Color(0xFF5D4037)),
-              ),
-              content: SingleChildScrollView(
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.0)),
+              elevation: 5,
+              backgroundColor: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                 decoration: BoxDecoration(
+                  color: const Color(0xFFFBF7F5),
+                  borderRadius: BorderRadius.circular(18.0),
+                  border: Border.all(color: const Color(0xFFE5E0D8)),
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: sortedDays.map((dayName) {
-                    return RadioListTile<String>(
-                      title: Text(
-                        dayName,
-                        style: const TextStyle(color: Color(0xFF5D4037)),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                         Text(
+                          "Select Day",
+                          style: GoogleFonts.inter(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF2C3028),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close, color: Colors.grey),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: sortedDays.map((dayName) {
+                            final sessionForDay = dailySessionMap[dayName]!;
+                            final isSelected = selectedSession == sessionForDay;
+                            final isFull = sessionForDay.capacityCurrent >= sessionForDay.capacityMax;
+
+                            return _buildDayOptionCard(
+                              dayName: dayName,
+                              session: sessionForDay,
+                              isSelected: isSelected,
+                              isFull: isFull,
+                              onTap: () {
+                                if (!isFull) {
+                                  setState(() {
+                                    selectedSession = sessionForDay;
+                                  });
+                                }
+                              },
+                            );
+                          }).toList(),
+                        ),
                       ),
-                      value: dayName,
-                      groupValue: selectedDayName,
-                      activeColor: const Color(0xFF6E7D6B),
-                      onChanged: (value) {
-                        setState(() => selectedDayName = value);
-                      },
-                    );
-                  }).toList(),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: selectedSession == null
+                            ? null
+                            : () {
+                                Navigator.pop(context);
+                                _handleBooking(context, request, selectedSession!.id);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6E7D6B),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                          textStyle: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          disabledBackgroundColor: const Color(0xFFA7B29C).withOpacity(0.5),
+                        ),
+                        child: const Text("Confirm Booking"),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "Cancel",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: selectedDayName == null
-                      ? null
-                      : () {
-                          // Ambil ID dari Map
-                          int? finalSessionId =
-                              dailySessionMap[selectedDayName];
-                          Navigator.pop(context);
-                          if (finalSessionId != null) {
-                            _handleBooking(context, request, finalSessionId);
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6E7D6B),
-                  ),
-                  child: const Text(
-                    "Confirm",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
             );
           },
         );
@@ -359,33 +444,113 @@ class ClassCard extends StatelessWidget {
     );
   }
 
-  // --- LOGIC: Kirim Request ke Django ---
-  Future<void> _handleBooking(
-    BuildContext context,
-    CookieRequest request,
-    int sessionId,
-  ) async {
-    // Sesuaikan URL (localhost / 10.0.2.2)
+  Widget _buildDayOptionCard({
+    required String dayName,
+    required ClassSession session,
+    required bool isSelected,
+    required bool isFull,
+    required VoidCallback onTap,
+  }) {
+    const Color defaultBg = Color(0xFFF1ECE2);
+    const Color selectedBg = Color(0xFFE8E2D6);
+    const Color defaultBorder = Color(0xFFCFC8BA);
+    const Color selectedBorder = Color(0xFF6E7D6B);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? selectedBg : defaultBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? selectedBorder : defaultBorder,
+            width: isSelected ? 2.0 : 1.0,
+          ),
+          boxShadow: isSelected ? [
+             BoxShadow(
+              color: selectedBorder.withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
+          ] : [],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              dayName, // Nama hari akan tampil di sini
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF2C3028),
+              ),
+            ),
+            Text(
+              isFull ? "Full" : "${session.capacityCurrent}/${session.capacityMax} seats",
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isFull ? Colors.red[400] : const Color(0xFF6E7D6B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleBookingDirectly(BuildContext context, CookieRequest request, int sessionId) async {
+     try {
+      final response = await request.post(
+        "http://10.0.2.2:8000/bookingkelas/book-flutter/", 
+        jsonEncode({"session_id": sessionId}),
+      );
+
+      if (context.mounted) {
+        if (response['status'] == 'success') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message']),
+              backgroundColor: const Color(0xFF6E7D6B),
+            ),
+          );
+          onRefresh();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Booking failed'),
+              backgroundColor: Colors.red[400],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red[400]),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleBooking(BuildContext context, CookieRequest request, int sessionId) async {
     final response = await request.postJson(
-      "http://127.0.0.1:8000/bookingkelas/book-flutter/",
+      "http://10.0.2.2:8000/bookingkelas/book-flutter/",
       {"session_id": sessionId},
     );
 
     if (context.mounted) {
       if (response['status'] == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message']),
-            backgroundColor: const Color(0xFF6E7D6B),
-          ),
+          SnackBar(content: Text(response['message']), backgroundColor: const Color(0xFF6E7D6B)),
         );
         onRefresh();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message']),
-            backgroundColor: Colors.red[400],
-          ),
+          SnackBar(content: Text(response['message']), backgroundColor: Colors.red[400]),
         );
       }
     }

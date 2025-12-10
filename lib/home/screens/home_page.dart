@@ -11,10 +11,10 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/cart/screens/cart.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
+// ignore: depend_on_referenced_packages
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
 class HomePage extends StatefulWidget {
-  // Terima fungsi navigasi dari induk (MainScaffold)
   final Function(int) onNavigateTo;
 
   const HomePage({super.key, required this.onNavigateTo});
@@ -24,11 +24,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // 🔹 Target animasi: ikon cart di header
   final GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>();
   late Function(GlobalKey) runAddToCartAnimation;
 
-  // Helper: Mapping angka string '0'-'6' ke Nama Hari (Untuk ClassCard)
   String _getDayName(String dayCode) {
     const map = {
       '0': 'Monday',
@@ -40,15 +38,6 @@ class _HomePageState extends State<HomePage> {
       '6': 'Sunday',
     };
     return map[dayCode] ?? dayCode;
-  }
-
-  // Helper: Membersihkan judul
-  String _baseTitle(String title) {
-    int lastIndex = title.lastIndexOf(' - ');
-    if (lastIndex != -1) {
-      return title.substring(0, lastIndex);
-    }
-    return title;
   }
 
   // 1. FETCH FEATURED PRODUCTS
@@ -68,15 +57,15 @@ class _HomePageState extends State<HomePage> {
     return listProduct;
   }
 
-  // 2. FETCH POPULAR CLASSES
+  // ✅ 2. FETCH POPULAR CLASSES (Per Hari Spesifik - Endpoint Baru)
   Future<List<ClassSession>> fetchPopularClasses(CookieRequest request) async {
     final response = await request.get(
-      'http://localhost:8000/bookingkelas/json/',
+      'http://localhost:8000/bookingkelas/api/popular/', // ✅ Endpoint baru
     );
 
     List<ClassSession> allSessions = [];
-    // Handle format JSON dari Django
     var rawData = response;
+    
     if (response is Map && response['sessions'] != null) {
       rawData = response['sessions'];
     }
@@ -87,11 +76,7 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    // Ambil 6 kelas pertama saja (slicing) sesuai logika landing page
-    if (allSessions.length > 6) {
-      return allSessions.sublist(0, 6);
-    }
-    return allSessions;
+    return allSessions; // ✅ Sudah dibatasi 6 kelas di backend
   }
 
   @override
@@ -164,7 +149,7 @@ class _HomePageState extends State<HomePage> {
                         child: AddToCartIcon(
                           key: cartKey,
                           badgeOptions: const BadgeOptions(
-                            active: false, // kita pakai badge custom sendiri
+                            active: false,
                           ),
                           icon: Consumer<CartProvider>(
                             builder: (context, cartProvider, child) {
@@ -209,10 +194,10 @@ class _HomePageState extends State<HomePage> {
                   // === HOME BANNER ===
                   HomeBanner(
                     onShopNow: () {
-                      widget.onNavigateTo(1); // Tab Products (Index 1)
+                      widget.onNavigateTo(1);
                     },
                     onBookClass: () {
-                      widget.onNavigateTo(2); // Tab Classes (Index 2)
+                      widget.onNavigateTo(2);
                     },
                   ),
 
@@ -220,11 +205,8 @@ class _HomePageState extends State<HomePage> {
 
                   // === FEATURED PRODUCTS SECTION ===
                   GestureDetector(
-                    // <--- 1. Bungkus dengan GestureDetector
                     onTap: () {
-                      widget.onNavigateTo(
-                        1,
-                      ); // <--- 2. Arahkan ke Tab Index 1 (Product)
+                      widget.onNavigateTo(1);
                     },
                     child: Container(
                       width: double.infinity,
@@ -304,8 +286,7 @@ class _HomePageState extends State<HomePage> {
                                   margin: const EdgeInsets.only(right: 16),
                                   child: AppProductCard(
                                     product: products[index],
-                                    runAnimation:
-                                        runAddToCartAnimation, // ✅ animasi jalan
+                                    runAnimation: runAddToCartAnimation,
                                   ),
                                 );
                               },
@@ -357,20 +338,25 @@ class _HomePageState extends State<HomePage> {
                               itemBuilder: (context, index) {
                                 final session = sessions[index];
 
+                                // ✅ Ambil nama hari dari session
                                 final daysNames = session.days
                                     .map((d) => _getDayName(d))
                                     .toList();
 
-                                Map<String, int> dailyMap = {};
+                                // ✅ Map hanya 1 hari (karena popular classes per hari)
+                                Map<String, ClassSession> dailyMap = {}; 
+  
                                 if (daysNames.isNotEmpty) {
-                                  dailyMap[daysNames.first] = session.id;
+
+                                  dailyMap[daysNames.first] = session; // <--- UBAH DI SINI
                                 }
 
                                 return ClassCard(
                                   session: session,
-                                  baseTitle: _baseTitle(session.title),
+                                  baseTitle: session.title, // ✅ Tidak perlu _baseTitle
                                   daysNames: daysNames,
                                   dailySessionMap: dailyMap,
+                                  isPopular: true, // ✅ Flag untuk homepage
                                   onRefresh: () {
                                     setState(() {});
                                   },
@@ -383,7 +369,7 @@ class _HomePageState extends State<HomePage> {
                             Center(
                               child: InkWell(
                                 onTap: () {
-                                  widget.onNavigateTo(2); // Tab Classes
+                                  widget.onNavigateTo(2);
                                 },
                                 borderRadius: BorderRadius.circular(30),
                                 child: Container(
@@ -437,7 +423,7 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
 
-                  const SizedBox(height: 80), // Spacer bawah
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
