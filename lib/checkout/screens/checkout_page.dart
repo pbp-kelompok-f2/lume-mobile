@@ -134,10 +134,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
             );
           },
           onViewOrderHistory: () {
-            Navigator.of(context).pop(); // close dialog
-            Navigator.of(
+            Navigator.of(context).pop(); // tutup dialog dulu
+            Navigator.pushReplacement(
               context,
-            ).push(MaterialPageRoute(builder: (_) => const ProfilePage()));
+              MaterialPageRoute(
+                builder: (context) => const MainScaffold(
+                  initialIndex: 3, // ⬅️ SESUAIKAN DENGAN TAB PROFILE
+                ),
+              ),
+            );
           },
         ),
       );
@@ -470,65 +475,81 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
 
           // ====== LIST ITEM KALAU SHOW DETAILS ======
-          if (_showDetails) ...[
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE6E7E1)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                children: s.items.map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      children: [
-                        // nama + qty
-                        Expanded(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  item.productName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Color(0xFF3E4038),
+          const SizedBox(height: 4),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: _showDetails
+                ? Column(
+                    children: [
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFE6E7E1),
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        child: Column(
+                          children: s.items.map((item) {
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 4.0),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            item.productName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              color: Color(0xFF3E4038),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '× ${item.quantity}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF7A7C72),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _formatCurrency(item.lineTotal),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF3E4038),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '× ${item.quantity}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF7A7C72),
-                                ),
-                              ),
-                            ],
-                          ),
+                            );
+                          }).toList(),
                         ),
-                        const SizedBox(width: 8),
-                        // line total
-                        Text(
-                          _formatCurrency(item.lineTotal),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF3E4038),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+
 
           const SizedBox(height: 12),
 
