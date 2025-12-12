@@ -26,62 +26,72 @@ class _AppProductCardState extends State<AppProductCard> {
   final GlobalKey widgetKey = GlobalKey(); 
 
   void _handleAddToCart(CookieRequest request) async {
-  // 1. Cek dulu: user udah login belum?
-  if (!request.loggedIn) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Please log in before adding items to your cart."),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return; // jangan lanjut call API
-  }
-
-  // 2. Kalau sudah login -> baru call server
-  try {
-    final response = await request.postJson(
-      "http://localhost:8000/cart/flutter/add/",
-      jsonEncode(<String, dynamic>{
-        'product_id': widget.product.id,
-        'quantity': 1,
-      }),
-    );
-
-    if (!mounted) return;
-
-    if (response['ok'] == true) {
-      // sukses → animasi + update badge
-      widget.runAnimation(widgetKey);
-      context.read<CartProvider>().fetchCartCount(request);
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    // 1. Cek dulu: user udah login belum?
+    if (!request.loggedIn) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("${widget.product.name} added to cart!"),
-          backgroundColor: LumeColors.sageGreen,
+        const SnackBar(
+          content: Text("Please log in before adding items to your cart."),
+          backgroundColor: Colors.red,
         ),
       );
-    } else {
-      // ❌ gagal (misal dari backend: out of stock, harus login, dll.)
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      return; // jangan lanjut call API
+    }
+
+    // 2. Kalau sudah login -> baru call server
+    try {
+      final response = await request.postJson(
+        "http://localhost:8000/cart/flutter/add/",
+        jsonEncode(<String, dynamic>{
+          'product_id': widget.product.id,
+          'quantity': 1,
+        }),
+      );
+
+      if (!mounted) return;
+
+      if (response['ok'] == true) {
+        // sukses → animasi + update badge
+        widget.runAnimation(widgetKey);
+        context.read<CartProvider>().fetchCartCount(request);
+
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("${widget.product.name} added to cart!"),
+            backgroundColor: LumeColors.sageGreen,
+          ),
+        );
+      } else {
+        // ❌ gagal (misal dari backend: out of stock, harus login, dll.)
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? "Failed to add"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response['message'] ?? "Failed to add"),
+          content: Text("Error: $e"),
           backgroundColor: Colors.red,
         ),
       );
     }
-  } catch (e) {
+  }
+
+  void _showOutOfStockMessage() {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Error: $e"),
+      const SnackBar(
+        content: Text("Product is out of stock."),
         backgroundColor: Colors.red,
       ),
     );
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +99,8 @@ class _AppProductCardState extends State<AppProductCard> {
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0
     );
+    final bool isOutOfStock =
+        !widget.product.inStock || widget.product.stock <= 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -133,17 +145,37 @@ class _AppProductCardState extends State<AppProductCard> {
                     width: double.infinity,
                     child: Stack(
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: widget.product.thumbnail.isNotEmpty
-                              ? Image.network(
-                                  widget.product.thumbnail,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                )
-                              : const Center(child: Icon(Icons.photo)),
+                        Positioned.fill(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: widget.product.thumbnail.isNotEmpty
+                                ? Image.network(
+                                    widget.product.thumbnail,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  )
+                                : const Center(child: Icon(Icons.photo)),
+                          ),
                         ),
+                        if (isOutOfStock)
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                color: Colors.black.withOpacity(0.45),
+                                alignment: Alignment.center,
+                                child: const Text(
+                                  'Out of stock',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -168,11 +200,15 @@ class _AppProductCardState extends State<AppProductCard> {
                     
                     // Tombol Add to Cart
                     InkWell(
-                      onTap: () => _handleAddToCart(request),
+                      onTap: isOutOfStock
+                          ? _showOutOfStockMessage
+                          : () => _handleAddToCart(request),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFA8AF9F),
+                          color: isOutOfStock
+                              ? Colors.grey
+                              : const Color(0xFFA8AF9F),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.shopping_cart_outlined, size: 16, color: Colors.white),
