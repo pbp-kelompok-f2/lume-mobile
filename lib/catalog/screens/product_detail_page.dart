@@ -22,6 +22,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   final GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>();
   final GlobalKey imageKey = GlobalKey();
   late Function(GlobalKey) runAddToCartAnimation;
+  late bool _isWishlisted;
+
+  @override
+  void initState() {
+    super.initState();
+    _isWishlisted = widget.product.isWishlisted;
+  }
 
   Future<void> _addToCart(CookieRequest request) async {
   // 1. Guest → suruh login dulu
@@ -77,6 +84,59 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 }
+
+  Future<void> _toggleWishlist(CookieRequest request) async {
+    if (!request.loggedIn) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please log in to use wishlist."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final previous = _isWishlisted;
+    setState(() {
+      _isWishlisted = !_isWishlisted;
+    });
+
+    try {
+      final resp = await request.postJson(
+        "http://localhost:8000/catalog/api/wishlist/toggle/${widget.product.id}/",
+        jsonEncode(<String, dynamic>{}),
+      );
+      if (!mounted) return;
+
+      if (resp['ok'] == true) {
+        setState(() {
+          _isWishlisted = resp['wishlisted'] == true;
+        });
+      } else {
+        setState(() {
+          _isWishlisted = previous;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to update wishlist."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isWishlisted = previous;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Failed to update wishlist."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
 
   @override
@@ -204,6 +264,33 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 errorBuilder: (ctx, error, stackTrace) => const Center(
                                   child: Icon(Icons.broken_image, size: 64, color: Colors.grey),
                                 ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 64,
+                          left: 16,
+                          child: InkWell(
+                            onTap: () => _toggleWishlist(request),
+                            borderRadius: BorderRadius.circular(24),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white70,
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                _isWishlisted ? Icons.favorite : Icons.favorite_border,
+                                color: _isWishlisted ? Colors.red : Colors.black87,
+                                size: 22,
                               ),
                             ),
                           ),
