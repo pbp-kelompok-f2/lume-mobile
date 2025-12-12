@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lume_mobile/auth/screens/login_page.dart'; // ✅ Import Login Page
+import 'package:lume_mobile/auth/screens/login_page.dart'; 
 import 'package:lume_mobile/models/booking_kelas.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:lume_mobile/checkout/screens/booking_checkout_page.dart';
 
 class ClassCard extends StatelessWidget {
   final ClassSession session;
@@ -502,23 +503,37 @@ class ClassCard extends StatelessWidget {
     );
   }
 
-  Future<void> _handleBookingDirectly(BuildContext context, CookieRequest request, int sessionId) async {
-     try {
+  // ✅ FUNGSI BARU: Direct Booking (Tanpa Modal) -> Langsung ke Checkout
+  Future<void> _handleBookingDirectly(
+    BuildContext context,
+    CookieRequest request,
+    int sessionId,
+  ) async {
+    try {
+      // 1. Kirim Request Booking
       final response = await request.post(
-        "http://10.0.2.2:8000/bookingkelas/book-flutter/", 
+        "http://localhost:8000/bookingkelas/book-flutter/", 
         jsonEncode({"session_id": sessionId}),
       );
 
       if (context.mounted) {
         if (response['status'] == 'success') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message']),
-              backgroundColor: const Color(0xFF6E7D6B),
+          // 2. Ambil Booking ID dari response
+          final bookingId = response['booking_id'];
+          
+          // 3. Langsung Pindah ke Halaman Checkout
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BookingCheckoutPage(bookingId: bookingId),
             ),
-          );
-          onRefresh();
+          ).then((_) {
+             // Refresh halaman ketika user kembali dari checkout (baik sudah bayar atau belum)
+             onRefresh(); 
+          });
+
         } else {
+          // Jika gagal (misal penuh atau sudah book)
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(response['message'] ?? 'Booking failed'),
@@ -536,21 +551,35 @@ class ClassCard extends StatelessWidget {
     }
   }
 
-  Future<void> _handleBooking(BuildContext context, CookieRequest request, int sessionId) async {
-    final response = await request.postJson(
-      "http://10.0.2.2:8000/bookingkelas/book-flutter/",
-      {"session_id": sessionId},
+  // --- LOGIC: Kirim Request ke Django (Dari Modal) ---
+  Future<void> _handleBooking(
+    BuildContext context,
+    CookieRequest request,
+    int sessionId,
+  ) async {
+    final response = await request.post(
+      "http://localhost:8000/bookingkelas/book-flutter/",
+      jsonEncode({"session_id": sessionId}),
     );
 
     if (context.mounted) {
       if (response['status'] == 'success') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['message']), backgroundColor: const Color(0xFF6E7D6B)),
-        );
-        onRefresh();
+        final bookingId = response['booking_id'];
+
+        // Navigasi ke Checkout juga untuk yang via Modal
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BookingCheckoutPage(bookingId: bookingId),
+            ),
+          ).then((_) => onRefresh());
+
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['message']), backgroundColor: Colors.red[400]),
+          SnackBar(
+            content: Text(response['message']),
+            backgroundColor: Colors.red[400],
+          ),
         );
       }
     }

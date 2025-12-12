@@ -4,7 +4,6 @@ import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:lume_mobile/profile/screens/profile_page.dart';
 
 class AdminProductListPage extends StatefulWidget {
   const AdminProductListPage({super.key});
