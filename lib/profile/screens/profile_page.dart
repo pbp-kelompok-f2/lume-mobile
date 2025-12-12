@@ -5,6 +5,7 @@ import 'package:lume_mobile/main/screens/main_scaffold.dart';
 import 'package:lume_mobile/profile/screens/purchase_history_page.dart';
 import 'package:lume_mobile/profile/screens/booking_history_page.dart';
 import 'package:lume_mobile/profile/screens/edit_profile_page.dart';
+import 'package:lume_mobile/catalog/screens/wishlist_page.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/providers/user_provider.dart'; // Import Provider
 import 'package:pbp_django_auth/pbp_django_auth.dart';
@@ -95,6 +96,22 @@ Future<void> _fetchUserData() async {
           children: [
             _buildProfileHeader(context, username, userProvider.profilePicture),
             const SizedBox(height: 30),
+
+            _buildMenuTile(
+              context: context,
+              title: "Wishlist",
+              subtitle: "Your saved products",
+              icon: Icons.favorite_border,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WishlistPage(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
 
             _buildMenuTile(
               context: context,

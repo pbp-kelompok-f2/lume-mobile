@@ -11,11 +11,13 @@ import 'dart:convert';
 class AppProductCard extends StatefulWidget {
   final Product product;
   final Function(GlobalKey) runAnimation; 
+  final ValueChanged<bool>? onWishlistChanged;
 
   const AppProductCard({
     super.key, 
     required this.product, 
-    required this.runAnimation
+    required this.runAnimation,
+    this.onWishlistChanged,
   });
 
   @override
@@ -24,6 +26,13 @@ class AppProductCard extends StatefulWidget {
 
 class _AppProductCardState extends State<AppProductCard> {
   final GlobalKey widgetKey = GlobalKey(); 
+  late bool _isWishlisted;
+
+  @override
+  void initState() {
+    super.initState();
+    _isWishlisted = widget.product.isWishlisted;
+  }
 
   void _handleAddToCart(CookieRequest request) async {
     // 1. Cek dulu: user udah login belum?
@@ -93,6 +102,60 @@ class _AppProductCardState extends State<AppProductCard> {
     );
   }
 
+  Future<void> _toggleWishlist(CookieRequest request) async {
+    if (!request.loggedIn) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please log in to use wishlist."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final previous = _isWishlisted;
+    setState(() {
+      _isWishlisted = !_isWishlisted;
+    });
+
+    try {
+      final resp = await request.postJson(
+        "http://localhost:8000/catalog/api/wishlist/toggle/${widget.product.id}/",
+        jsonEncode(<String, dynamic>{}),
+      );
+      if (!mounted) return;
+
+      if (resp['ok'] == true) {
+        setState(() {
+          _isWishlisted = resp['wishlisted'] == true;
+        });
+        widget.onWishlistChanged?.call(_isWishlisted);
+      } else {
+        setState(() {
+          _isWishlisted = previous;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Failed to update wishlist."),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isWishlisted = previous;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Failed to update wishlist."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final request = context.read<CookieRequest>();
@@ -156,6 +219,36 @@ class _AppProductCardState extends State<AppProductCard> {
                                     height: double.infinity,
                                   )
                                 : const Center(child: Icon(Icons.photo)),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: InkWell(
+                            onTap: () => _toggleWishlist(request),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white70,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                _isWishlisted
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color:
+                                    _isWishlisted ? Colors.red : Colors.black87,
+                                size: 18,
+                              ),
+                            ),
                           ),
                         ),
                         if (isOutOfStock)
