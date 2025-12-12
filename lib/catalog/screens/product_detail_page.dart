@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/cart/screens/cart.dart';
@@ -33,12 +34,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Future<void> _addToCart(CookieRequest request) async {
   // 1. Guest → suruh login dulu
   if (!request.loggedIn) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Please log in before adding items to your cart."),
-        backgroundColor: Colors.red,
-      ),
-    );
+    _showSnackBar("Please log in before adding items to your cart.");
     return;
   }
 
@@ -58,42 +54,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       runAddToCartAnimation(imageKey);
       context.read<CartProvider>().fetchCartCount(request);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("${widget.product.name} added to cart!"),
-          backgroundColor: LumeColors.sageGreen,
-        ),
-      );
+      _showSnackBar("${widget.product.name} added to cart!");
     } else {
       // gagal -> pakai message dari backend (mis. "Exceeding stock. Only X left.")
       final msg = response['message'] ?? "Failed to add item to cart.";
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar(msg);
     }
   } catch (e) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Error: $e"),
-        backgroundColor: Colors.red,
-      ),
-    );
+    _showSnackBar("Error: $e");
   }
 }
 
   Future<void> _toggleWishlist(CookieRequest request) async {
     if (!request.loggedIn) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please log in to use wishlist."),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar("Please log in to use wishlist.");
       return;
     }
 
@@ -117,25 +93,31 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         setState(() {
           _isWishlisted = previous;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Failed to update wishlist."),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnackBar("Failed to update wishlist.");
       }
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _isWishlisted = previous;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Failed to update wishlist."),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar("Failed to update wishlist.");
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: const Color(0xFF6E7D6B),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 
 
