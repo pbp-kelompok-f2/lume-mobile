@@ -246,7 +246,7 @@ class ClassCard extends StatelessWidget {
         // ✅ Jika belum login, arahkan ke LoginPage
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
+          MaterialPageRoute(builder: (context) => const LoginPage(showBack: true,)),
         );
       } else {
         // ✅ Jika sudah login, jalankan aksi (booking/modal)
@@ -490,7 +490,7 @@ class ClassCard extends StatelessWidget {
               ),
             ),
             Text(
-              isFull ? "Full" : "${session.capacityCurrent}/${session.capacityMax} seats",
+              isFull ? "Full" : "${session.capacityCurrent}/${session.capacityMax}",
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -536,8 +536,15 @@ class ClassCard extends StatelessWidget {
           // Jika gagal (misal penuh atau sudah book)
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(response['message'] ?? 'Booking failed'),
-              backgroundColor: Colors.red[400],
+              content: Text(
+                response['message'] ?? 'Booking failed',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: const Color(0xFF6E7D6B),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         }
@@ -545,7 +552,17 @@ class ClassCard extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red[400]),
+          SnackBar(
+              content: Text(
+                'Error: $e',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: const Color(0xFF6E7D6B),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
         );
       }
     }
@@ -577,9 +594,16 @@ class ClassCard extends StatelessWidget {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message']),
-            backgroundColor: Colors.red[400],
-          ),
+              content: Text(
+                response['message'] ?? 'Booking failed',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: const Color(0xFF6E7D6B),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
         );
       }
     }
