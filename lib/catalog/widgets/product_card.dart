@@ -8,6 +8,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/providers/cart_provider.dart'; 
 import 'dart:convert';
+import 'package:lume_mobile/auth/screens/login_page.dart';
 
 class AppProductCard extends StatefulWidget {
   final Product product;
@@ -38,11 +39,16 @@ class _AppProductCardState extends State<AppProductCard> {
   void _handleAddToCart(CookieRequest request) async {
     // 1. Cek dulu: user udah login belum?
     if (!request.loggedIn) {
-      if (!mounted) return;
-      _showSnackBar("Please log in before adding items to your cart.");
-      return; // jangan lanjut call API
-    }
+  if (!mounted) return;
 
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const LoginPage(showBack: true),
+    ),
+  );
+  return;
+}
     // 2. Kalau sudah login -> baru call server
     try {
       final response = await request.postJson(
