@@ -7,7 +7,8 @@ import 'package:lume_mobile/models/cart_items.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/checkout/screens/checkout_page.dart';
 
-import 'package:lume_mobile/auth/screens/login_page.dart'; 
+import 'package:lume_mobile/auth/screens/login_page.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -23,7 +24,7 @@ class _CartPageState extends State<CartPage> {
 
   final String baseUrl = "http://localhost:8000";
 
- @override
+  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -32,11 +33,11 @@ class _CartPageState extends State<CartPage> {
       // Kalau belum login -> redirect ke halaman login
       if (!request.loggedIn) {
         Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const LoginPage(showBack: true),
-            ),
-          );
+          context,
+          MaterialPageRoute(
+            builder: (_) => const LoginPage(showBack: true),
+          ),
+        );
         return;
       }
 
@@ -171,16 +172,12 @@ class _CartPageState extends State<CartPage> {
           }
         });
       } else {
-        final message =
-            response['message'] ?? 'Failed to update selection.';
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message)),
-          );
-        }
+        final message = response['message'] ?? 'Failed to update selection.';
+        _showLumeSnackBar(message);
       }
     } catch (e) {
       debugPrint("Error toggling selection: $e");
+      _showLumeSnackBar('Failed to update selection.');
     }
   }
 
@@ -198,118 +195,200 @@ class _CartPageState extends State<CartPage> {
       );
 
       if (response['ok'] == true) {
-  // backend balikin quantity final (bisa 0 kalau di-delete)
-  final updatedQty = response['quantity'] ?? newQty;
+        // backend balikin quantity final (bisa 0 kalau di-delete)
+        final updatedQty = response['quantity'] ?? newQty;
 
-  setState(() {
-    final index = _cartItems.indexWhere((item) => item.id == itemId);
-    if (index != -1) {
-      if (updatedQty <= 0) {
-        // Simpan dulu nama item buat snackbar
-        final removedName = _cartItems[index].productName;
+        setState(() {
+          final index = _cartItems.indexWhere((item) => item.id == itemId);
+          if (index != -1) {
+            if (updatedQty <= 0) {
+              final removedName = _cartItems[index].productName;
 
-        // item dihapus di server → hapus juga di UI
-        _selectedItemIds.remove(itemId);
-        _cartItems.removeAt(index);
+              _selectedItemIds.remove(itemId);
+              _cartItems.removeAt(index);
 
-        // Tampilkan snackbar "removed" dengan warna Lume
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$removedName removed from cart.'),
-              backgroundColor: LumeColors.sageGreen,
-            ),
-          );
-        }
+              _showLumeSnackBar('$removedName removed from cart.');
+            } else {
+              _cartItems[index].quantity = updatedQty;
+            }
+          }
+        });
       } else {
-        // cuma update jumlah
-        _cartItems[index].quantity = updatedQty;
+        // kasus: stok kurang, dsb.
+        final message = response['message'] ?? 'Failed to update quantity.';
+        final safeQty = response['quantity'];
+
+        if (safeQty != null) {
+          setState(() {
+            final index = _cartItems.indexWhere((item) => item.id == itemId);
+            if (index != -1) {
+              _cartItems[index].quantity = safeQty;
+            }
+          });
+        }
+
+        _showLumeSnackBar(message);
       }
-    }
-  });
-} else {
-  // kasus: stok kurang, dsb.
-  final message = response['message'] ?? 'Failed to update quantity.';
-  final safeQty = response['quantity'];
-
-  if (safeQty != null) {
-    setState(() {
-      final index = _cartItems.indexWhere((item) => item.id == itemId);
-      if (index != -1) {
-        _cartItems[index].quantity = safeQty;
-      }
-    });
-  }
-
-  if (mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red, 
-      ),
-    );
-  }
-}
-
     } catch (e) {
       debugPrint("Error updating quantity: $e");
+      _showLumeSnackBar('Failed to update quantity.');
     }
   }
 
   // Delete item (sinkron ke backend)
-Future<void> _deleteItem(int itemId) async {
-  final request = context.read<CookieRequest>();
+  Future<void> _deleteItem(int itemId) async {
+    final request = context.read<CookieRequest>();
 
-  try {
-    final response = await request.postJson(
-      '$baseUrl/cart/flutter/remove/',
-      jsonEncode(<String, dynamic>{
-        'item_id': itemId,
-      }),
+    try {
+      final response = await request.postJson(
+        '$baseUrl/cart/flutter/remove/',
+        jsonEncode(<String, dynamic>{
+          'item_id': itemId,
+        }),
+      );
+
+      if (response['ok'] == true) {
+        String? removedName;
+
+        setState(() {
+          final index = _cartItems.indexWhere((item) => item.id == itemId);
+          if (index != -1) {
+            removedName = _cartItems[index].productName;
+            _cartItems.removeAt(index);
+          }
+          _selectedItemIds.remove(itemId);
+        });
+
+        _showLumeSnackBar(
+          removedName != null
+              ? '$removedName removed from cart.'
+              : 'Item removed from cart.',
+        );
+      } else {
+        final message = response['message'] ?? 'Failed to remove item.';
+        _showLumeSnackBar(message);
+      }
+    } catch (e) {
+      debugPrint("Error removing item: $e");
+      _showLumeSnackBar('Failed to remove item.');
+    }
+  }
+
+  // Modal konfirmasi remove (theme Lume)
+  Future<bool> _showRemoveConfirmModal({
+    required String title,
+    required String message,
+    String cancelText = "Cancel",
+    String confirmText = "Remove",
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: LumeColors.creamBackground,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 22),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: LumeColors.brownBorder, width: 1),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: LumeColors.darkText,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: LumeColors.mutedText,
+                    fontSize: 13.5,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: LumeColors.brownBorder),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text(
+                          cancelText,
+                          style: const TextStyle(
+                            color: LumeColors.mutedText,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: LumeColors.darkGreen,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: Text(
+                          confirmText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
 
-    if (response['ok'] == true) {
-      String? removedName;
-
-      setState(() {
-        final index = _cartItems.indexWhere((item) => item.id == itemId);
-        if (index != -1) {
-          removedName = _cartItems[index].productName;
-          _cartItems.removeAt(index);
-        }
-        _selectedItemIds.remove(itemId);
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              removedName != null
-                  ? '$removedName removed from cart.'
-                  : 'Item removed from cart.',
-            ),
-            backgroundColor: LumeColors.sageGreen, 
-          ),
-        );
-      }
-    } else {
-      final message = response['message'] ?? 'Failed to remove item.';
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.red, 
-          ),
-        );
-      }
-    }
-  } catch (e) {
-    debugPrint("Error removing item: $e");
+    return result ?? false;
   }
-}
 
+  // SnackBar seragam (sesuai tim)
+  void _showLumeSnackBar(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: const Color(0xFF6E7D6B),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -331,8 +410,7 @@ Future<void> _deleteItem(int itemId) async {
         backgroundColor: LumeColors.creamBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: LumeColors.darkText),
+          icon: const Icon(Icons.arrow_back_ios_new, color: LumeColors.darkText),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -352,8 +430,7 @@ Future<void> _deleteItem(int itemId) async {
                               Icon(
                                 Icons.shopping_bag_outlined,
                                 size: 64,
-                                color:
-                                    LumeColors.mutedText.withOpacity(0.5),
+                                color: LumeColors.mutedText.withOpacity(0.5),
                               ),
                               const SizedBox(height: 16),
                               const Text(
@@ -432,7 +509,6 @@ Future<void> _deleteItem(int itemId) async {
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
-              // Handle URL gambar dengan benar (jika relatif tambahkan baseUrl)
               item.image.startsWith('http')
                   ? item.image
                   : '$baseUrl/media/${item.image}',
@@ -491,12 +567,19 @@ Future<void> _deleteItem(int itemId) async {
                 ),
                 child: Row(
                   children: [
-                    _buildQtyBtn(Icons.remove, () {
+                    _buildQtyBtn(Icons.remove, () async {
                       if (item.quantity > 1) {
                         _updateItemQuantity(item.id, item.quantity - 1);
                       } else {
-                        // quantity 1 → kirim 0 ke backend, biar dihapus
-                        _updateItemQuantity(item.id, 0);
+                        final ok = await _showRemoveConfirmModal(
+                          title: "Remove item?",
+                          message:
+                              "Are you sure you want to remove ${item.productName} from your cart?",
+                          confirmText: "Remove",
+                        );
+                        if (ok) {
+                          _updateItemQuantity(item.id, 0);
+                        }
                       }
                     }),
                     Padding(
@@ -518,7 +601,15 @@ Future<void> _deleteItem(int itemId) async {
               ),
               const SizedBox(height: 12),
               InkWell(
-                onTap: () => _deleteItem(item.id),
+                onTap: () async {
+                  final ok = await _showRemoveConfirmModal(
+                    title: "Remove item?",
+                    message:
+                        "Are you sure you want to remove ${item.productName} from your cart?",
+                    confirmText: "Remove",
+                  );
+                  if (ok) _deleteItem(item.id);
+                },
                 child: const Padding(
                   padding: EdgeInsets.all(4.0),
                   child: Icon(
@@ -550,88 +641,87 @@ Future<void> _deleteItem(int itemId) async {
   }
 
   Widget _buildOrderSummary(bool isAllSelected) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(20),
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black12,
-          blurRadius: 8,
-          offset: Offset(0, -3),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
         ),
-      ],
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min, // ⬅️ penting biar nggak makan tinggi berlebih
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Row Select All
-        Row(
-          children: [
-            SizedBox(
-              width: 22,
-              height: 22,
-              child: Checkbox(
-                value: isAllSelected,
-                activeColor: LumeColors.darkGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                onChanged: _toggleSelectAll,
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Text(
-              "Select All Items",
-              style: TextStyle(
-                color: LumeColors.mutedText,
-                fontSize: 13,
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-        const SizedBox(height: 6),
-        const Divider(
-          height: 16,
-          color: LumeColors.brownBorder,
-        ),
-
-        const Text(
-          "Order Summary",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16, // tadinya 18
-            color: LumeColors.darkText,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, -3),
           ),
-        ),
-        const SizedBox(height: 8),
-
-        // Row Total
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Total (${_selectedItemIds.length} items)",
-              style: const TextStyle(
-                color: LumeColors.mutedText,
-                fontSize: 13,
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row Select All
+          Row(
+            children: [
+              SizedBox(
+                width: 22,
+                height: 22,
+                child: Checkbox(
+                  value: isAllSelected,
+                  activeColor: LumeColors.darkGreen,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  onChanged: _toggleSelectAll,
+                ),
               ),
+              const SizedBox(width: 6),
+              const Text(
+                "Select All Items",
+                style: TextStyle(
+                  color: LumeColors.mutedText,
+                  fontSize: 13,
+                ),
+              ),
+              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Divider(
+            height: 16,
+            color: LumeColors.brownBorder,
+          ),
+          const Text(
+            "Order Summary",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: LumeColors.darkText,
             ),
-            Text(
-              "Rp ${_totalPrice.toStringAsFixed(0).replaceAllMapped(
-                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                    (Match m) => '${m[1]}.',
-                  )}",
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: LumeColors.darkText,
+          ),
+          const SizedBox(height: 8),
+
+          // Row Total
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Total (${_selectedItemIds.length} items)",
+                style: const TextStyle(
+                  color: LumeColors.mutedText,
+                  fontSize: 13,
+                ),
               ),
+              Text(
+                "Rp ${_totalPrice.toStringAsFixed(0).replaceAllMapped(
+                      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                      (Match m) => '${m[1]}.',
+                    )}",
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: LumeColors.darkText,
+                ),
               ),
             ],
           ),
@@ -642,21 +732,18 @@ Future<void> _deleteItem(int itemId) async {
             child: ElevatedButton(
               onPressed: _selectedItemIds.isEmpty
                   ? null
-                    : () async {
-                        // Pindah ke halaman Checkout
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CheckoutPage(),
-                          ),
-                        );
+                  : () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CheckoutPage(),
+                        ),
+                      );
 
-                        // Setelah balik dari checkout, refresh cart
-                        // (biar item yang sudah di-checkout kehapus dari UI)
-                        if (mounted) {
-                          _fetchCartItems();
-                        }
-                      },
+                      if (mounted) {
+                        _fetchCartItems();
+                      }
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: LumeColors.darkGreen,
                 disabledBackgroundColor: Colors.grey[300],
@@ -665,56 +752,55 @@ Future<void> _deleteItem(int itemId) async {
                 ),
                 elevation: 0,
               ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "Proceed to Checkout",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Proceed to Checkout",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
-                ),
-                SizedBox(width: 6),
-                Icon(
-                  Icons.arrow_forward,
-                  color: Colors.white,
-                  size: 18,
-                )
-              ],
+                  SizedBox(width: 6),
+                  Icon(
+                    Icons.arrow_forward,
+                    color: Colors.white,
+                    size: 18,
+                  )
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 10),
+          const SizedBox(height: 10),
 
-        // Continue shopping
-        SizedBox(
-          width: double.infinity,
-          height: 44, // sedikit lebih pendek
-          child: OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(
-                color: LumeColors.brownBorder,
+          // Continue shopping
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(
+                  color: LumeColors.brownBorder,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-            ),
-            child: const Text(
-              "Continue Shopping",
-              style: TextStyle(
-                color: LumeColors.mutedText,
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
+              child: const Text(
+                "Continue Shopping",
+                style: TextStyle(
+                  color: LumeColors.mutedText,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-  
-}
+        ],
+      ),
+    );
+  }
 }

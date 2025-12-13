@@ -9,6 +9,8 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
+import 'package:lume_mobile/auth/screens/login_page.dart';
+
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -34,10 +36,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Future<void> _addToCart(CookieRequest request) async {
   // 1. Guest → suruh login dulu
   if (!request.loggedIn) {
-    _showSnackBar("Please log in before adding items to your cart.");
-    return;
-  }
+  if (!mounted) return;
 
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const LoginPage(showBack: true),
+    ),
+  );
+  return;
+}
   try {
     final response = await request.postJson(
       "http://localhost:8000/cart/flutter/add/",
