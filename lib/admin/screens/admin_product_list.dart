@@ -84,7 +84,7 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text("No products found"));
           }
-
+      
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: snapshot.data!.length,

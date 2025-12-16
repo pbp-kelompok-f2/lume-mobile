@@ -8,7 +8,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/admin/screens/admin_user_list.dart';
 import 'package:lume_mobile/admin/screens/admin_order_list.dart';
-import 'package:lume_mobile/admin/screens/admin_booking_list.dart';
+import 'package:lume_mobile/admin/screens/admin_class_list_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -177,7 +177,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const AdminBookingListPage(),
+                            builder: (context) => const AdminClassListPage(),
                           ),
                         );
                       },
