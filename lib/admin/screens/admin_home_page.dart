@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lume_mobile/admin/screens/admin_product_list.dart';
+import 'package:lume_mobile/admin/screens/admin_class_list_page.dart'; // ✅ Import halaman admin kelas
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/profile/screens/profile_page.dart';
 
@@ -15,25 +16,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   // Daftar halaman admin
   final List<Widget> _pages = [
+    // Tab 0: Admin Produk
     const AdminProductListPage(),
-    const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.calendar_today, size: 64, color: LumeColors.mutedText),
-          SizedBox(height: 16),
-          Text(
-            "Booking Class Admin\n(Coming Soon)",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18, 
-              color: LumeColors.darkText,
-              fontWeight: FontWeight.bold
-            ),
-          ),
-        ],
-      ),
-    ),
+    
+    // Tab 1: Admin Booking Kelas (Sudah diganti)
+    const AdminClassListPage(), 
+    
+    // Tab 2: Profile
     const ProfilePage(),
   ];
 
@@ -61,7 +50,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.class_), // Icon kelas
-            label: 'Booking Kelas',
+            label: 'Classes',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person), 
