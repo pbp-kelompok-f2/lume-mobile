@@ -20,22 +20,25 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     decimalDigits: 0,
   );
 
-  // Sesuaikan URL (10.0.2.2 untuk Emulator Android)
   final String baseUrl = "http://localhost:8000"; 
-  // final String baseUrl = "http://10.0.2.2:8000"; 
 
-  Future<List<BookingHistory>> fetchBookingHistory(CookieRequest request) async {
-    final response = await request.get('$baseUrl/bookingkelas/my-bookings/');
-    List<BookingHistory> listBooking = [];
-    
-    // Cek apakah response valid dan memiliki key 'bookings'
-    if (response is Map && response.containsKey('bookings')) {
-        for (var d in response['bookings']) {
-          if (d != null) listBooking.add(BookingHistory.fromJson(d));
+Future<List<BookingHistory>> fetchBookingHistory(CookieRequest request) async {
+  final response = await request.get('$baseUrl/bookingkelas/my-bookings/');
+  List<BookingHistory> listBooking = [];
+  
+  if (response is Map && response.containsKey('bookings')) {
+    for (var d in response['bookings']) {
+      if (d != null) {
+        final booking = BookingHistory.fromJson(d);
+        String status = booking.status.toLowerCase();
+        if (status != 'pending payment' && status != 'pending') {
+          listBooking.add(booking);
         }
+      }
     }
-    return listBooking;
   }
+  return listBooking;
+}
 
   @override
   Widget build(BuildContext context) {
@@ -231,11 +234,6 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
       case 'success':
         bgColor = const Color(0xFFE3F5E3); 
         textColor = const Color(0xFF2E7D32);
-        break;
-      case 'pending payment':
-      case 'pending':
-        bgColor = const Color(0xFFFFF3E0); 
-        textColor = const Color(0xFFEF6C00); 
         break;
       default:
         bgColor = Colors.grey.shade100;
