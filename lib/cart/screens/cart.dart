@@ -7,6 +7,7 @@ import 'package:lume_mobile/models/cart_items.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/checkout/screens/checkout_page.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 
 import 'package:lume_mobile/auth/screens/login_page.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,8 +23,6 @@ class _CartPageState extends State<CartPage> {
   List<CartItem> _cartItems = [];
   final Set<int> _selectedItemIds = {};
   bool _isLoading = true;
-
-  final String baseUrl = "http://localhost:8000";
 
   @override
   void initState() {
@@ -63,7 +62,7 @@ class _CartPageState extends State<CartPage> {
     setState(() => _isLoading = true);
     try {
       // Panggil endpoint list flutter
-      var response = await request.get('$baseUrl/cart/flutter/list/');
+      var response = await request.get(apiPath('/cart/flutter/list/'));
 
       List<CartItem> items = [];
       if (response['items'] != null) {
@@ -111,7 +110,7 @@ class _CartPageState extends State<CartPage> {
       // SELECT ALL di backend
       try {
         final response = await request.postJson(
-          '$baseUrl/cart/flutter/select-all/',
+          apiPath('/cart/flutter/select-all/'),
           jsonEncode(<String, dynamic>{}),
         );
 
@@ -132,7 +131,7 @@ class _CartPageState extends State<CartPage> {
       // UNSELECT ALL di backend
       try {
         final response = await request.postJson(
-          '$baseUrl/cart/flutter/unselect-all/',
+          apiPath('/cart/flutter/unselect-all/'),
           jsonEncode(<String, dynamic>{}),
         );
 
@@ -156,7 +155,7 @@ class _CartPageState extends State<CartPage> {
 
     try {
       final response = await request.postJson(
-        '$baseUrl/cart/flutter/toggle/',
+        apiPath('/cart/flutter/toggle/'),
         jsonEncode(<String, dynamic>{
           'item_id': item.id,
           'is_selected': isSelected,
@@ -188,7 +187,7 @@ class _CartPageState extends State<CartPage> {
 
     try {
       final response = await request.postJson(
-        '$baseUrl/cart/flutter/set-qty/',
+        apiPath('/cart/flutter/set-qty/'),
         jsonEncode(<String, dynamic>{
           'item_id': itemId,
           'quantity': newQty,
@@ -242,7 +241,7 @@ class _CartPageState extends State<CartPage> {
 
     try {
       final response = await request.postJson(
-        '$baseUrl/cart/flutter/remove/',
+        apiPath('/cart/flutter/remove/'),
         jsonEncode(<String, dynamic>{
           'item_id': itemId,
         }),

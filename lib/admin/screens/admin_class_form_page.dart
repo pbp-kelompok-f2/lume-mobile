@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/models/booking_kelas.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -97,10 +98,10 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
     String url;
     if (widget.session == null) {
       // Create
-      url = 'http://localhost:8000/bookingkelas/create-flutter/';
+      url = apiPath('/bookingkelas/create-flutter/');
     } else {
       // Edit
-      url = 'http://localhost:8000/bookingkelas/edit-flutter/${widget.session!.id}/';
+      url = apiPath('/bookingkelas/edit-flutter/${widget.session!.id}/');
     }
 
     final Map<String, dynamic> body = {

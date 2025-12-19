@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lume_mobile/models/profile.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -23,10 +24,8 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
 
   // Sesuaikan URL (10.0.2.2 untuk Emulator Android)
   // final String baseUrl = "http://localhost:8000"; 
-  final String baseUrl = "http://localhost:8000";
-
   Future<List<OrderHistory>> fetchOrderHistory(CookieRequest request) async {
-    final response = await request.get('$baseUrl/checkout/api/history/');
+    final response = await request.get(apiPath('/checkout/api/history/'));
     
     List<OrderHistory> listOrder = [];
     for (var d in response) {

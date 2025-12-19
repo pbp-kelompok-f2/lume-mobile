@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:lume_mobile/models/profile.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -21,10 +22,8 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     decimalDigits: 0,
   );
 
-  final String baseUrl = "http://localhost:8000"; 
-
 Future<List<BookingHistory>> fetchBookingHistory(CookieRequest request) async {
-  final response = await request.get('$baseUrl/bookingkelas/my-bookings/');
+  final response = await request.get(apiPath('/bookingkelas/my-bookings/'));
   List<BookingHistory> listBooking = [];
   
   if (response is Map && response.containsKey('bookings')) {

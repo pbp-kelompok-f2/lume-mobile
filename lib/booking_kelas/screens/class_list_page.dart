@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lume_mobile/booking_kelas/widgets/class_card.dart';
 import 'package:lume_mobile/models/booking_kelas.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -52,7 +53,7 @@ class _ClassListPageState extends State<ClassListPage> {
 
   Future<List<ProcessedSession>> fetchAndProcessClasses(CookieRequest request) async {
     // Sesuaikan URL (localhost untuk simulator, 10.0.2.2 untuk emulator Android)
-    final response = await request.get('http://localhost:8000/bookingkelas/json/');
+    final response = await request.get(apiPath('/bookingkelas/json/'));
     
     List<ClassSession> allSessions = [];
     if (response is List) {

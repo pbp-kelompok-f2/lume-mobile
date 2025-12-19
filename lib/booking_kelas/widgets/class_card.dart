@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/auth/screens/login_page.dart'; 
 import 'package:lume_mobile/models/booking_kelas.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/checkout/screens/booking_checkout_page.dart';
@@ -512,7 +513,7 @@ class ClassCard extends StatelessWidget {
     try {
       // 1. Kirim Request Booking
       final response = await request.post(
-        "http://localhost:8000/bookingkelas/book-flutter/", 
+        apiPath("/bookingkelas/book-flutter/"), 
         jsonEncode({"session_id": sessionId}),
       );
 
@@ -575,7 +576,7 @@ class ClassCard extends StatelessWidget {
     int sessionId,
   ) async {
     final response = await request.post(
-      "http://localhost:8000/bookingkelas/book-flutter/",
+      apiPath("/bookingkelas/book-flutter/"),
       jsonEncode({"session_id": sessionId}),
     );
 

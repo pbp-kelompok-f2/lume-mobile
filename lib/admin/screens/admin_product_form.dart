@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -70,7 +71,7 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
       if (widget.product == null) {
         // --- CREATE MODE ---
         final response = await request.postJson(
-          'http://localhost:8000/catalog/api/products/create/',
+          apiPath('/catalog/api/products/create/'),
           body,
         );
         if (response['id'] != null) { // Cek sukses via respon ID
@@ -128,7 +129,7 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
         // Jika package pbp_django_auth tidak support PUT, 
         // gunakan perintah ini (perlu import 'package:http/http.dart' as http):
         /*
-          final url = Uri.parse('http://localhost:8000/catalog/api/products/${widget.product!.id}/update/');
+          final url = Uri.parse(apiPath('/catalog/api/products/${widget.product!.id}/update/'));
           final response = await http.put(
             url,
             headers: request.headers..addAll({"Content-Type": "application/json"}),
@@ -146,7 +147,7 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
         
         // SEMENTARA SAYA PAKAI POST (Tolong tambahkan "POST" di api_product_update Django Anda)
          final response = await request.postJson(
-          'http://localhost:8000/catalog/api/products/${widget.product!.id}/update/',
+          apiPath('/catalog/api/products/${widget.product!.id}/update/'),
           body,
         );
         

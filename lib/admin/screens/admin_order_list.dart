@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:lume_mobile/models/admin_models.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -15,11 +16,10 @@ class AdminOrderListPage extends StatefulWidget {
 }
 
 class _AdminOrderListPageState extends State<AdminOrderListPage> {
-  final String baseUrl = "http://localhost:8000"; // Sesuaikan IP
   final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
   Future<List<AdminOrder>> fetchOrders(CookieRequest request) async {
-    final response = await request.get('$baseUrl/useradmin/api/orders/');
+    final response = await request.get(apiPath('/useradmin/api/orders/'));
     List<AdminOrder> list = [];
     if (response['ok'] == true) {
       for (var d in response['orders']) {

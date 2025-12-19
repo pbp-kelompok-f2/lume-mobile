@@ -7,6 +7,7 @@ import 'package:lume_mobile/catalog/widgets/product_card.dart';
 import 'package:lume_mobile/home/widgets/home_banner.dart';
 import 'package:lume_mobile/providers/user_provider.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/cart/screens/cart.dart';
@@ -43,7 +44,7 @@ class _HomePageState extends State<HomePage> {
   // 1. FETCH FEATURED PRODUCTS
   Future<List<Product>> fetchFeaturedProducts(CookieRequest request) async {
     final response = await request.get(
-      'http://localhost:8000/catalog/api/products/?limit=5',
+      apiPath('/catalog/api/products/?limit=5'),
     );
     var data = response;
     List<Product> listProduct = [];
@@ -60,7 +61,7 @@ class _HomePageState extends State<HomePage> {
   // ✅ 2. FETCH POPULAR CLASSES (Per Hari Spesifik - Endpoint Baru)
   Future<List<ClassSession>> fetchPopularClasses(CookieRequest request) async {
     final response = await request.get(
-      'http://localhost:8000/bookingkelas/api/popular/', // ✅ Endpoint baru
+      apiPath('/bookingkelas/api/popular/'), // ✅ Endpoint baru
     );
 
     List<ClassSession> allSessions = [];

@@ -4,6 +4,7 @@ import 'package:lume_mobile/models/product.dart';
 import 'package:intl/intl.dart';
 import 'package:lume_mobile/catalog/screens/product_detail_page.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/providers/cart_provider.dart'; 
@@ -67,7 +68,7 @@ class _AppProductCardState extends State<AppProductCard> {
     // 2. Kalau sudah login -> baru call server
     try {
       final response = await request.postJson(
-        "http://localhost:8000/cart/flutter/add/",
+        apiPath("/cart/flutter/add/"),
         jsonEncode(<String, dynamic>{
           'product_id': widget.product.id,
           'quantity': 1,
@@ -113,7 +114,7 @@ class _AppProductCardState extends State<AppProductCard> {
 
     try {
       final resp = await request.postJson(
-        "http://localhost:8000/catalog/api/wishlist/toggle/${widget.product.id}/",
+        apiPath("/catalog/api/wishlist/toggle/${widget.product.id}/"),
         jsonEncode(<String, dynamic>{}),
       );
       if (!mounted) return;

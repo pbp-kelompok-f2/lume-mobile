@@ -5,6 +5,7 @@ import 'package:lume_mobile/catalog/widgets/product_card.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -37,7 +38,7 @@ class _WishlistPageState extends State<WishlistPage> {
 
   Future<List<Product>> _fetchWishlistProducts(CookieRequest request) async {
     final response = await request.get(
-      'http://localhost:8000/catalog/api/products/?limit=200',
+      apiPath('/catalog/api/products/?limit=200'),
     );
 
     final List<Product> products = [];

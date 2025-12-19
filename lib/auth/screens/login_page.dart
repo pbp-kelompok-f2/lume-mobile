@@ -7,6 +7,7 @@ import 'package:lume_mobile/auth/screens/register_page.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
 import 'package:lume_mobile/admin/screens/admin_home_page.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 
 class LoginPage extends StatefulWidget {
   // dipakai untuk menentukan apakah perlu tampilkan tombol back
@@ -96,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                           String password = _passwordController.text;
 
                           final response = await request.login(
-                            "http://localhost:8000/user/api/login/",
+                            apiPath("/user/api/login/"),
                             {
                               'username': username,
                               'password': password,
