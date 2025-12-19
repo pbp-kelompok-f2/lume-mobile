@@ -8,6 +8,7 @@ import 'package:lume_mobile/profile/screens/edit_profile_page.dart';
 import 'package:lume_mobile/catalog/screens/wishlist_page.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/providers/user_provider.dart'; // Import Provider
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/admin/screens/admin_dashboard_page.dart';
@@ -76,19 +77,9 @@ Future<void> _fetchUserData() async {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: LumeColors.creamBackground,
-        elevation: 0,
-        title: Text(
-          "My Profile",
-          style: GoogleFonts.inter(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFFA8AF9F), 
-          ),
-        ),
-        centerTitle: false,
-        automaticallyImplyLeading: false,
+      appBar: const LumeAppBar(
+        title: "My Profile",
+        showBack: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
 import 'package:lume_mobile/models/admin_stats.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/admin/screens/admin_user_list.dart';
@@ -50,22 +51,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: LumeColors.creamBackground,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        centerTitle: false,
-        title: Padding(
-          padding: const EdgeInsets.only(left: 8.0),
-          child: Text(
-            "Admin Dashboard",
-            style: GoogleFonts.inter(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: LumeColors.darkText,
-            ),
-          ),
-        ),
+      appBar: const LumeAppBar(
+        title: "Admin Dashboard",
+        showBack: false,
       ),
       body: FutureBuilder<AdminStats?>(
         future: fetchAdminStats(request),

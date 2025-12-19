@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 
 import '../../models/checkout.dart';
 import '../checkout_service.dart';
@@ -175,22 +176,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F3),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFE8E4D6),
-        elevation: 2,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        centerTitle: true,
-        title: const Text(
-          'Checkout',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF6F7166),
-          ),
-        ),
-      ),
+      appBar: const LumeAppBar(title: 'Checkout'),
       body: SafeArea(
         child: Column(
           children: [

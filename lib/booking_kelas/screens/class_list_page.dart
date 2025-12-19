@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lume_mobile/booking_kelas/widgets/class_card.dart';
 import 'package:lume_mobile/models/booking_kelas.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -123,15 +124,9 @@ class _ClassListPageState extends State<ClassListPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F1EE), 
-      appBar: AppBar(
-        title: const Text("Book A Class"),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: const TextStyle(
-            color: Color(0xFF5D4037), fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Playfair Display'
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF5D4037)),
+      appBar: const LumeAppBar(
+        title: "Book A Class",
+        showBack: false,
       ),
       body: FutureBuilder(
         future: fetchAndProcessClasses(request),

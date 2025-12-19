@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 import 'package:lume_mobile/auth/screens/login_page.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 
 
 class ProductDetailPage extends StatefulWidget {
@@ -146,90 +147,66 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       },
       child: Scaffold(
         backgroundColor: LumeColors.creamBackground,
-        
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 16.0),
-            child: IconButton(
-              icon: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(Icons.arrow_back, color: LumeColors.darkText, size: 24),
-                ),
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
+        appBar: LumeAppBar(
+          title: "Product Detail",
           actions: [
-  Padding(
-    padding: const EdgeInsets.only(right: 16.0),
-    child: GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const CartPage()),
-        ).then((_) {
-          // Hanya fetch kalau user lagi login
-          final req = context.read<CookieRequest>();
-          if (req.loggedIn) {
-            context.read<CartProvider>().fetchCartCount(req);
-          }
-        });
-      },
-      child: AddToCartIcon(
-        key: cartKey,
-        badgeOptions: const BadgeOptions(
-          active: false, // Disable built-in badge
-        ),
-        icon: Consumer<CartProvider>(
-          builder: (context, cartProvider, child) {
-            Widget iconBtn = Container(
-              height: 44,
-              width: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.shopping_cart_outlined,
-                  color: LumeColors.darkText,
-                  size: 24,
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CartPage()),
+                  ).then((_) {
+                    final req = context.read<CookieRequest>();
+                    if (req.loggedIn) {
+                      context.read<CartProvider>().fetchCartCount(req);
+                    }
+                  });
+                },
+                child: AddToCartIcon(
+                  key: cartKey,
+                  badgeOptions: const BadgeOptions(
+                    active: false, // Disable built-in badge
+                  ),
+                  icon: Consumer<CartProvider>(
+                    builder: (context, cartProvider, child) {
+                      Widget iconBtn = Container(
+                        height: 44,
+                        width: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.shopping_cart_outlined,
+                            color: LumeColors.darkText,
+                            size: 24,
+                          ),
+                        ),
+                      );
+
+                      if (!request.loggedIn || cartProvider.counter <= 0) {
+                        return iconBtn;
+                      }
+
+                      return Badge(
+                        label: Text(
+                          "${cartProvider.counter}",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: LumeColors.darkGreen,
+                        child: iconBtn,
+                      );
+                    },
+                  ),
                 ),
               ),
-            );
-
-            // ❗ Guest ATAU counter 0 → icon polos
-            if (!request.loggedIn || cartProvider.counter <= 0) {
-              return iconBtn;
-            }
-
-            // ✅ Login + ada item → pakai badge hijau
-            return Badge(
-              label: Text(
-                "${cartProvider.counter}",
-                style: const TextStyle(color: Colors.white),
-              ),
-              backgroundColor: LumeColors.darkGreen,
-              child: iconBtn,
-            );
-          },
+            ),
+          ],
         ),
-      ),
-    ),
-  ),
-],
-
-        ),
-        extendBodyBehindAppBar: true,
 
         body: Column(
           children: [

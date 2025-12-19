@@ -5,6 +5,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -27,14 +28,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: LumeColors.darkText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: const LumeAppBar(title: "Register"),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),

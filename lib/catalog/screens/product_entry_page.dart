@@ -9,6 +9,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 
 class ProductEntryPage extends StatefulWidget {
   const ProductEntryPage({super.key});
@@ -393,19 +394,9 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
       },
       child: Scaffold(
         backgroundColor: LumeColors.creamBackground,
-        appBar: AppBar(
-          backgroundColor: LumeColors.creamBackground,
-          elevation: 0,
-          title: const Text(
-            "Products",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: LumeColors.darkText,
-              letterSpacing: -0.5,
-            ),
-          ),
-          centerTitle: false,
+        appBar: const LumeAppBar(
+          title: "Products",
+          showBack: false,
         ),
         body: Column(
           children: [

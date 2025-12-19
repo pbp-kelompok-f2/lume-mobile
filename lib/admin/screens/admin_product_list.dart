@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lume_mobile/admin/screens/admin_product_form.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -52,15 +53,9 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        title: const Text(
-          "Kelola Produk",
-          style: TextStyle(fontWeight: FontWeight.bold, color: LumeColors.darkText),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false, // Hilangkan tombol back karena ini halaman utama tab
-        iconTheme: const IconThemeData(color: LumeColors.darkText),
+      appBar: const LumeAppBar(
+        title: "Kelola Produk",
+        showBack: false,
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: LumeColors.sageGreen,

@@ -4,6 +4,7 @@ import 'package:lume_mobile/auth/screens/login_page.dart';
 import 'package:lume_mobile/catalog/widgets/product_card.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -73,19 +74,7 @@ class _WishlistPageState extends State<WishlistPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: LumeColors.creamBackground,
-        elevation: 0,
-        title: Text(
-          'My Wishlist',
-          style: GoogleFonts.inter(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF6E7D6B),
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF6E7D6B)),
-      ),
+      appBar: const LumeAppBar(title: 'My Wishlist'),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: FutureBuilder<List<Product>>(
