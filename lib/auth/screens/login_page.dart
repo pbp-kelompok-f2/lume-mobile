@@ -6,6 +6,7 @@ import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/auth/screens/register_page.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
 import 'package:lume_mobile/admin/screens/admin_home_page.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 
 class LoginPage extends StatefulWidget {
   // dipakai untuk menentukan apakah perlu tampilkan tombol back
@@ -32,19 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
       appBar: widget.showBack
-          ? AppBar(
-              backgroundColor: LumeColors.creamBackground,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: LumeColors.darkGreen,
-                ),
-                onPressed: () {
-                  Navigator.pop(context); // balik ke halaman sebelumnya
-                },
-              ),
-            )
+          ? const LumeAppBar(title: "Login")
           : null,
       body: Center(
         child: SingleChildScrollView(

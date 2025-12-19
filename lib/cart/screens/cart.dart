@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:lume_mobile/models/cart_items.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/checkout/screens/checkout_page.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 
 import 'package:lume_mobile/auth/screens/login_page.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -397,23 +398,7 @@ class _CartPageState extends State<CartPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        title: const Text(
-          "Shopping Cart",
-          style: TextStyle(
-            color: LumeColors.darkText,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: LumeColors.creamBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: LumeColors.darkText),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: const LumeAppBar(title: "Shopping Cart"),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: LumeColors.darkGreen),

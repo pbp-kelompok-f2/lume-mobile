@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lume_mobile/models/admin_models.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -34,15 +35,7 @@ class _AdminOrderListPageState extends State<AdminOrderListPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: LumeColors.creamBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: LumeColors.darkText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text("All Orders", style: GoogleFonts.inter(color: LumeColors.darkText, fontWeight: FontWeight.bold)),
-      ),
+      appBar: const LumeAppBar(title: "All Orders"),
       body: FutureBuilder(
         future: fetchOrders(request),
         builder: (context, AsyncSnapshot<List<AdminOrder>> snapshot) {

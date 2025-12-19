@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
@@ -145,18 +146,7 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        title: Text(
-          "Checkout",
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF2C3028),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF2C3028)),
-      ),
+      appBar: const LumeAppBar(title: "Checkout"),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage != null

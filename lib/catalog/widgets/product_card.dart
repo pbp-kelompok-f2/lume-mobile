@@ -36,6 +36,21 @@ class _AppProductCardState extends State<AppProductCard> {
     _isWishlisted = widget.product.isWishlisted;
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final request = context.watch<CookieRequest>();
+
+    // If user logs out, clear local wishlist state so the heart returns to default
+    if (!request.loggedIn && _isWishlisted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _isWishlisted = false);
+        }
+      });
+    }
+  }
+
   void _handleAddToCart(CookieRequest request) async {
     // 1. Cek dulu: user udah login belum?
     if (!request.loggedIn) {

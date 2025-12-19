@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:lume_mobile/models/profile.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -46,23 +47,7 @@ Future<List<BookingHistory>> fetchBookingHistory(CookieRequest request) async {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: LumeColors.creamBackground,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: LumeColors.darkText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          "Class Bookings",
-          style: GoogleFonts.inter(
-            color: LumeColors.darkText,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-      ),
+      appBar: const LumeAppBar(title: "Class Bookings"),
       body: FutureBuilder(
         future: fetchBookingHistory(request),
         builder: (context, AsyncSnapshot<List<BookingHistory>> snapshot) {
