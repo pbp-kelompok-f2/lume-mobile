@@ -9,6 +9,7 @@ import 'package:lume_mobile/catalog/screens/wishlist_page.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/providers/user_provider.dart'; // Import Provider
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/admin/screens/admin_dashboard_page.dart';
@@ -21,8 +22,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-
-  final String baseUrl = "http://localhost:8000";
 
   @override
   void initState() {
@@ -41,7 +40,7 @@ Future<void> _fetchUserData() async {
     if (userProvider.isAdmin) return; 
 
     try {
-      final response = await request.get('$baseUrl/user/api/profile/');
+      final response = await request.get(apiPath('/user/api/profile/'));
       if (response['ok'] == true) {
         final userData = response['user'];
         
@@ -138,7 +137,7 @@ Future<void> _fetchUserData() async {
               child: ElevatedButton(
                 onPressed: () async {
                   final response = await request.logout(
-                    "$baseUrl/user/api/logout/",
+                    apiPath("/user/api/logout/"),
                   );
                   
                   if (response['ok'] == true) { 

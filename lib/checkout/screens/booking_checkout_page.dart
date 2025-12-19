@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
@@ -60,7 +61,7 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
     final request = context.read<CookieRequest>();
     try {
       final response = await request.get(
-        'http://localhost:8000/checkout/api/booking-details/${widget.bookingId}/',
+        apiPath('/checkout/api/booking-details/${widget.bookingId}/'),
       );
 
       if (response['status'] == 'success') {
@@ -91,7 +92,7 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
     final request = context.read<CookieRequest>();
     try {
       final response = await request.post(
-        'http://localhost:8000/checkout/api/process-payment/',
+        apiPath('/checkout/api/process-payment/'),
         jsonEncode({'booking_id': widget.bookingId}),
       );
 

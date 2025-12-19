@@ -9,6 +9,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
 
 class ProductEntryPage extends StatefulWidget {
@@ -102,7 +103,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
 
     try {
       final response = await request.get(
-        'http://localhost:8000/catalog/api/products/?limit=$_limit&offset=$_offset',
+        apiPath('/catalog/api/products/?limit=$_limit&offset=$_offset'),
       );
 
       List<Product> newItems = [];
@@ -132,7 +133,7 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
       final request = context.read<CookieRequest>();
       try {
         final response = await request.get(
-          'http://localhost:8000/catalog/api/products/?limit=1000',
+          apiPath('/catalog/api/products/?limit=1000'),
         );
         List<Product> list = [];
         if (response['results'] != null) {

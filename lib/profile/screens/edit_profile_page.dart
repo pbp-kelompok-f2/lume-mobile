@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/providers/user_provider.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +23,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _imageController = TextEditingController();
   
   bool _isLoading = false;
-  final String baseUrl = "http://localhost:8000"; 
 
   @override
   void initState() {
@@ -96,7 +96,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       setState(() => _isLoading = true);
                       
                       final response = await request.postJson(
-                        "$baseUrl/user/api/profile/update/",
+                        apiPath("/user/api/profile/update/"),
                         jsonEncode({
                           "username": _usernameController.text,
                           "phone": _phoneController.text,

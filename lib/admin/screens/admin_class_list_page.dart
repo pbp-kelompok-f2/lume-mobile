@@ -4,6 +4,7 @@ import 'package:lume_mobile/admin/screens/admin_class_form_page.dart';
 import 'package:lume_mobile/models/booking_kelas.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -19,7 +20,7 @@ class _AdminClassListPageState extends State<AdminClassListPage> {
   Future<List<ClassSession>> fetchClasses(CookieRequest request) async {
     // Gunakan endpoint JSON yang sudah ada (sama seperti user biasa)
     final response = await request.get(
-      'http://localhost:8000/bookingkelas/json/',
+      apiPath('/bookingkelas/json/'),
     );
 
     List<ClassSession> listSessions = [];
@@ -40,7 +41,7 @@ class _AdminClassListPageState extends State<AdminClassListPage> {
   Future<void> deleteClass(CookieRequest request, int id) async {
     try {
       final response = await request.postJson(
-        'http://localhost:8000/bookingkelas/delete-flutter/$id/', // Endpoint perlu disesuaikan di urls.py django nanti
+        apiPath('/bookingkelas/delete-flutter/$id/'), // Endpoint perlu disesuaikan di urls.py django nanti
         {},
       );
 

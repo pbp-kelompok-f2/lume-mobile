@@ -11,6 +11,7 @@ import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 import 'package:lume_mobile/auth/screens/login_page.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 
 
 class ProductDetailPage extends StatefulWidget {
@@ -49,7 +50,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 }
   try {
     final response = await request.postJson(
-      "http://localhost:8000/cart/flutter/add/",
+      apiPath("/cart/flutter/add/"),
       jsonEncode(<String, dynamic>{
         'product_id': widget.product.id,
         'quantity': 1,
@@ -89,7 +90,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
     try {
       final resp = await request.postJson(
-        "http://localhost:8000/catalog/api/wishlist/toggle/${widget.product.id}/",
+        apiPath("/catalog/api/wishlist/toggle/${widget.product.id}/"),
         jsonEncode(<String, dynamic>{}),
       );
       if (!mounted) return;

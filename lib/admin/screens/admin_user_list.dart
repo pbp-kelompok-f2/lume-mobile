@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/models/admin_models.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -14,10 +15,8 @@ class AdminUserListPage extends StatefulWidget {
 }
 
 class _AdminUserListPageState extends State<AdminUserListPage> {
-  final String baseUrl = "http://localhost:8000"; // Sesuaikan IP
-
   Future<List<AdminUser>> fetchUsers(CookieRequest request) async {
-    final response = await request.get('$baseUrl/useradmin/api/users/');
+    final response = await request.get(apiPath('/useradmin/api/users/'));
     List<AdminUser> list = [];
     if (response['ok'] == true) {
       for (var d in response['users']) {

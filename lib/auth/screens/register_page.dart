@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -123,8 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                           setState(() => _isLoading = true);
 
-                          String url =
-                              "http://localhost:8000/user/api/register/";
+                          String url = apiPath("/user/api/register/");
 
                           final response = await request.postJson(
                             url,

@@ -3,13 +3,9 @@
 import 'dart:convert';
 
 import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:lume_mobile/config/api_config.dart';
 
 import '../models/checkout.dart';
-
-/// Ganti base URL ini dengan URL Django kamu.
-/// - Kalau jalan di Android emulator: pakai http://10.0.2.2:8000
-/// - Kalau jalan di Chrome: pakai http://localhost:8000
-const String lumeBaseUrl = 'http://localhost:8000';
 
 /// Data form checkout yang dikirim ke Django.
 class CheckoutFormData {
@@ -58,7 +54,7 @@ class CheckoutService {
     bool selectedOnly = true,
   }) async {
     final query = selectedOnly ? '?selected=1' : '';
-    final url = '$lumeBaseUrl/checkout/api/cart-summary/$query';
+    final url = apiPath('/checkout/api/cart-summary/$query');
 
     try {
       // pbp_django_auth sudah otomatis decode JSON -> Map/List
@@ -90,7 +86,7 @@ class CheckoutService {
     CookieRequest request,
     CheckoutFormData data,
   ) async {
-    final url = '$lumeBaseUrl/checkout/api/cart-checkout/';
+    final url = apiPath('/checkout/api/cart-checkout/');
 
     try {
       final dynamic response = await request.postJson(

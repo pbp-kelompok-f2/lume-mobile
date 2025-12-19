@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lume_mobile/models/cart_items.dart';
+import 'package:lume_mobile/config/api_config.dart';
 
 class CartProvider extends ChangeNotifier {
   List<CartItem> _cartItems = [];
@@ -30,10 +31,8 @@ class CartProvider extends ChangeNotifier {
     _isLoading = true;
     // notifyListeners(); // kalau mau ada loading spinner realtime
 
-    const String baseUrl = "http://localhost:8000";
-
     try {
-      final response = await request.get('$baseUrl/cart/flutter/list/');
+      final response = await request.get(apiPath('/cart/flutter/list/'));
 
       List<CartItem> items = [];
 
@@ -87,10 +86,8 @@ class CartProvider extends ChangeNotifier {
     return false;
   }
 
-  const String baseUrl = "http://localhost:8000";
-
   final response = await request.postJson(
-    "$baseUrl/cart/flutter/add/",
+    apiPath("/cart/flutter/add/"),
     jsonEncode(<String, dynamic>{
       'product_id': productId, // Kirim UUID string apa adanya
       'quantity': 1,
@@ -118,10 +115,9 @@ class CartProvider extends ChangeNotifier {
       return;
     }
 
-    const String baseUrl = "http://localhost:8000";
     try {
       // Panggil endpoint list untuk dapat total_items
-      final response = await request.get('$baseUrl/cart/flutter/list/');
+      final response = await request.get(apiPath('/cart/flutter/list/'));
 
       if (response != null && response['ok'] == true) {
         _counter = response['total_items'] ?? 0;

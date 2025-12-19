@@ -3,6 +3,7 @@ import 'package:lume_mobile/admin/screens/admin_product_form.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -16,7 +17,7 @@ class AdminProductListPage extends StatefulWidget {
 class _AdminProductListPageState extends State<AdminProductListPage> {
   Future<List<Product>> fetchProducts(CookieRequest request) async {
     // Menggunakan endpoint yang sama dengan user biasa, tapi admin punya akses penuh
-    final response = await request.get('http://localhost:8000/catalog/api/products/?limit=100');
+    final response = await request.get(apiPath('/catalog/api/products/?limit=100'));
     
     List<Product> list = [];
     if (response['results'] != null) {
@@ -30,7 +31,7 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
   Future<void> deleteProduct(CookieRequest request, String id) async {
     try {
       final response = await request.post(
-          'http://localhost:8000/catalog/api/products/$id/delete/',
+          apiPath('/catalog/api/products/$id/delete/'),
           {} 
       );
       if (response['ok'] == true) {
