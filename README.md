@@ -1,4 +1,9 @@
 # lume-mobile
+
+[![Build Status](https://app.bitrise.io/app/1e46c592-486b-4c10-a6bb-628e70eec4c8/status.svg?token=ZsOjDa31t4uC2u3S1Dha2g&branch=master)](https://app.bitrise.io/app/1e46c592-486b-4c10-a6bb-628e70eec4c8)
+
+Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/1e46c592-486b-4c10-a6bb-628e70eec4c8/installable-artifacts/f1b3bcadbc2aed40/public-install-page/37bbdd06b999df1a19a1831d5505d094)
+
 Tugas Kelompok PBP F - F02
 - Naomyscha Attalie Maza
 - Nisrina Fatimah
