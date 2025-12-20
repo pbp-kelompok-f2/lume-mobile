@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lume_mobile/booking_kelas/widgets/class_card.dart';
 import 'package:lume_mobile/models/booking_kelas.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
@@ -8,7 +10,7 @@ import 'package:provider/provider.dart';
 class ProcessedSession {
   final ClassSession session; // Instance representatif (biasanya yang pertama)
   final String baseTitle;
-  final Map<String, int> dailyMap; // Map Nama Hari -> ID Sesi (Untuk Daily)
+  final Map<String, ClassSession> dailyMap; // Map Nama Hari -> ID Sesi (Untuk Daily)
   final Set<String> daysNames; // List nama hari untuk ditampilkan (Badge)
 
   ProcessedSession({
@@ -41,15 +43,17 @@ class _ClassListPageState extends State<ClassListPage> {
   // Helper: Membersihkan judul (Sesuai views.py _base_title)
   // Misal: "Pilates - Rp50.000" -> "Pilates"
   String _baseTitle(String title) {
-    if (title.contains(' - ')) {
-      return title.split(' - ').first;
+    int lastIndex = title.lastIndexOf(' - ');
+    if (lastIndex != -1) {
+      // Ambil string dari awal sampai sebelum tanda ' - ' terakhir
+      return title.substring(0, lastIndex);
     }
     return title;
   }
 
   Future<List<ProcessedSession>> fetchAndProcessClasses(CookieRequest request) async {
     // Sesuaikan URL (localhost untuk simulator, 10.0.2.2 untuk emulator Android)
-    final response = await request.get('http://localhost:8000/bookingkelas/json/');
+    final response = await request.get(apiPath('/bookingkelas/json/'));
     
     List<ClassSession> allSessions = [];
     if (response is List) {
@@ -90,7 +94,7 @@ class _ClassListPageState extends State<ClassListPage> {
       if (s.category.toLowerCase() == 'daily') {
         // Asumsi Daily per row cuma punya 1 hari, tapi kita loop jg utk aman
         for (var dayName in currentDayNames) {
-           group.dailyMap[dayName] = s.id;
+           group.dailyMap[dayName] = s;
         }
       } else {
         // Jika Weekly, ID nya pakai instance ini (biasanya weekly 1 row = banyak hari)
@@ -121,15 +125,9 @@ class _ClassListPageState extends State<ClassListPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F1EE), 
-      appBar: AppBar(
-        title: const Text("Book A Class"),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: const TextStyle(
-            color: Color(0xFF5D4037), fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Playfair Display'
-        ),
-        iconTheme: const IconThemeData(color: Color(0xFF5D4037)),
+      appBar: const LumeAppBar(
+        title: "Book A Class",
+        showBack: false,
       ),
       body: FutureBuilder(
         future: fetchAndProcessClasses(request),

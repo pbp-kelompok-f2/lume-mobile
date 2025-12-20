@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:lume_mobile/auth/screens/login_page.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
-import 'package:lume_mobile/models/profile.dart';
+import 'package:lume_mobile/profile/screens/purchase_history_page.dart';
+import 'package:lume_mobile/profile/screens/booking_history_page.dart';
+import 'package:lume_mobile/profile/screens/edit_profile_page.dart';
+import 'package:lume_mobile/catalog/screens/wishlist_page.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/providers/user_provider.dart'; // Import Provider
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:lume_mobile/admin/screens/admin_dashboard_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -16,144 +22,131 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final NumberFormat currencyFormatter = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  );
 
-  // Sesuaikan URL dengan environment (10.0.2.2 untuk Emulator, 127.0.0.1 untuk Web)
-  final String baseUrl = "http://localhost:8000"; 
-  // final String baseUrl = "http://10.0.2.2:8000";
-
-  Future<List<OrderHistory>> fetchOrderHistory(CookieRequest request) async {
-    final response = await request.get('$baseUrl/checkout/json/');
-    List<OrderHistory> listOrder = [];
-    for (var d in response) {
-      if (d != null) listOrder.add(OrderHistory.fromJson(d));
-    }
-    return listOrder;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _fetchUserData();
+      }
+    });
   }
 
-  Future<List<BookingHistory>> fetchBookingHistory(
-    CookieRequest request,
-  ) async {
-    final response = await request.get(
-      '$baseUrl/bookingkelas/json/',
-    );
-    List<BookingHistory> listBooking = [];
-    for (var d in response) {
-      if (d != null) listBooking.add(BookingHistory.fromJson(d));
+Future<void> _fetchUserData() async {
+    final request = context.read<CookieRequest>();
+    final userProvider = context.read<UserProvider>();
+
+    if (userProvider.isAdmin) return; 
+
+    try {
+      final response = await request.get(apiPath('/user/api/profile/'));
+      if (response['ok'] == true) {
+        final userData = response['user'];
+        
+        userProvider.setUsername(
+          userData['username'],
+          profilePicture: userData['profile_picture'] ?? "",
+          isAdmin: userProvider.isAdmin 
+        );
+      }
+    } catch (e) {
+      debugPrint("Gagal fetch profile: $e");
     }
-    return listBooking;
   }
 
   @override
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
+    final userProvider = context.watch<UserProvider>(); 
 
-    // Jika belum login, tampilkan Login Page
     if (!request.loggedIn) {
       return const LoginPage();
     }
 
-    String username = request.jsonData['username'] ?? "User";
+    if (userProvider.isAdmin) {
+      return const AdminDashboardPage();
+    }
+
+    String username = userProvider.username;
+    
+    if (username == "Guest" && request.jsonData['username'] != null) {
+        username = request.jsonData['username'];
+    }
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: AppBar(
-        backgroundColor: LumeColors.creamBackground,
-        elevation: 0,
-        title: Text(
-          "Profile",
-          style: GoogleFonts.inter(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFFA8AF9F),
-          ),
-        ),
-        centerTitle: false,
-        automaticallyImplyLeading: false,
+      appBar: const LumeAppBar(
+        title: "My Profile",
+        showBack: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            _buildProfileHeader(username),
-            const SizedBox(height: 20),
+            _buildProfileHeader(context, username, userProvider.profilePicture),
+            const SizedBox(height: 30),
 
-            FutureBuilder(
-              future: fetchOrderHistory(request),
-              builder: (context, AsyncSnapshot<List<OrderHistory>> snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return _buildSectionCard(
-                  title: "Purchase History",
-                  icon: Icons.shopping_bag_outlined,
-                  children: (!snapshot.hasData || snapshot.data!.isEmpty)
-                      ? [
-                          const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Text("No orders yet."),
-                          ),
-                        ]
-                      : snapshot.data!
-                          .map((order) => _buildOrderRow(order))
-                          .toList(),
+            _buildMenuTile(
+              context: context,
+              title: "Wishlist",
+              subtitle: "Your saved products",
+              icon: Icons.favorite_border,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WishlistPage(),
+                  ),
                 );
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            FutureBuilder(
-              future: fetchBookingHistory(request),
-              builder: (context, AsyncSnapshot<List<BookingHistory>> snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return _buildSectionCard(
-                  title: "Classes Booking History",
-                  icon: Icons.self_improvement,
-                  children: (!snapshot.hasData || snapshot.data!.isEmpty)
-                      ? [
-                          const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Text("No bookings yet."),
-                          ),
-                        ]
-                      : snapshot.data!
-                          .map((booking) => _buildBookingRow(booking))
-                          .toList(),
+            _buildMenuTile(
+              context: context,
+              title: "Purchase History",
+              subtitle: "View your product orders",
+              icon: Icons.shopping_bag_outlined,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PurchaseHistoryPage()),
                 );
               },
             ),
+            const SizedBox(height: 16),
+            _buildMenuTile(
+              context: context,
+              title: "Class Booking History",
+              subtitle: "Check your pilates sessions",
+              icon: Icons.self_improvement, 
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const BookingHistoryPage()),
+                );
+              },
+            ),
+            
             const SizedBox(height: 40),
 
-            // === TOMBOL LOGOUT YANG DIPERBAIKI ===
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
                 onPressed: () async {
-                  // 1. Panggil Logout API
                   final response = await request.logout(
-                    "$baseUrl/user/api/logout/",
+                    apiPath("/user/api/logout/"),
                   );
                   
-                  // 2. FIX: Cek 'ok' bukan 'status' (sesuai backend Django)
                   if (response['ok'] == true) { 
                     if (context.mounted) {
-                      String message = response['message'] ?? "Successfully logged out!";
+                      context.read<UserProvider>().setUsername("Guest"); 
                       
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(message),
-                        ),
+                        const SnackBar(content: Text("Successfully logged out!")),
                       );
-
-                      // 3. Navigasi Paksa ke Home Page (MainScaffold index 0)
-                      // pushReplacement akan me-reset stack navigasi dan memuat ulang MainScaffold
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -162,10 +155,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       );
                     }
                   } else {
-                     // Handle error logout jika perlu
                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Logout failed, please try again.")),
+                          const SnackBar(content: Text("Logout failed.")),
                         );
                      }
                   }
@@ -187,21 +179,32 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-            // =====================================
-            
-            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileHeader(String username) {
+Widget _buildProfileHeader(BuildContext context, String username, String profilePicUrl) {
+
+    String getProxiedUrl(String originalUrl) {
+      if (originalUrl.isEmpty) return "";
+      String cleanUrl = originalUrl.replaceFirst(RegExp(r'^https?://'), '');
+      return "https://images.weserv.nl/?url=$cleanUrl&w=1000&h=1000fit=cover";
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: const Color(0xFF8E9388),
         borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -213,7 +216,28 @@ class _ProfilePageState extends State<ProfilePage> {
               border: Border.all(color: Colors.white, width: 2),
               color: Colors.grey.shade300,
             ),
-            child: const Icon(Icons.person, size: 40, color: Colors.grey),
+            child: ClipOval(
+              child: profilePicUrl.isNotEmpty
+                  ? Image.network(
+                      // Panggil helper function di sini!
+                      getProxiedUrl(profilePicUrl),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Jika proxy pun gagal, baru tampilkan icon
+                        return const Icon(Icons.person, size: 40, color: Colors.grey);
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: LumeColors.sageGreen, 
+                            strokeWidth: 2
+                          )
+                        );
+                      },
+                    )
+                  : const Icon(Icons.person, size: 40, color: Colors.grey),
+            ),
           ),
           const SizedBox(width: 16),
           Column(
@@ -222,37 +246,57 @@ class _ProfilePageState extends State<ProfilePage> {
               Text(
                 username,
                 style: GoogleFonts.inter(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+              
+              // Tombol Edit Profile
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfilePage(),
+                      ),
+                    ).then((_) {
+                        _fetchUserData();
+                    });
+                  },
                   borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      "Edit Profile",
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.5), 
+                        width: 1
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.arrow_forward_ios,
-                      size: 10,
-                      color: Colors.white,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.edit_outlined, size: 14, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          "Edit Profile",
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
@@ -262,174 +306,70 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildSectionCard({
+  Widget _buildMenuTile({
+    required BuildContext context,
     required String title,
+    required String subtitle,
     required IconData icon,
-    required List<Widget> children,
+    required VoidCallback onTap,
   }) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0EBE0),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20, color: LumeColors.darkText),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: LumeColors.darkText,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: Colors.grey.shade400, width: 0.5),
-              ),
-            ),
-            child: Column(children: children),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildOrderRow(OrderHistory order) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              order.date,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: LumeColors.mutedText,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: const Color.fromARGB(255, 237, 233, 222),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
               children: [
-                Text(
-                  order.items.join(", "),
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: LumeColors.darkText,
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0EBE0),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: const Color(0xFF6E7D6B), size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: LumeColors.darkText,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                currencyFormatter.format(order.totalAmount),
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: LumeColors.darkText,
-                ),
-              ),
-              const SizedBox(height: 4),
-              _buildStatusBadge(order.status),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBookingRow(BookingHistory booking) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade400),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  booking.className,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                _buildStatusBadge(booking.status),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Instructor: ${booking.instructor}",
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: LumeColors.mutedText,
-              ),
-            ),
-            Text(
-              "📅 ${booking.date}",
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: LumeColors.mutedText,
-              ),
-            ),
-            Text(
-              "🕒 ${booking.time}",
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: LumeColors.mutedText,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String status) {
-    bool isCompleted =
-        status.toLowerCase() == "completed" ||
-        status.toLowerCase() == "success";
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: isCompleted ? const Color(0xFFD4E2D4) : const Color(0xFFD0DCE6),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCompleted
-              ? const Color(0xFFA8C3A8)
-              : const Color(0xFFA8BCC3),
-        ),
-      ),
-      child: Text(
-        status,
-        style: GoogleFonts.inter(
-          fontSize: 10,
-          color: isCompleted
-              ? const Color(0xFF5F7A5F)
-              : const Color(0xFF5F707A),
         ),
       ),
     );

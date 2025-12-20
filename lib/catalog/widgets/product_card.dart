@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:intl/intl.dart';
 import 'package:lume_mobile/catalog/screens/product_detail_page.dart';
+import 'package:lume_mobile/theme/lume_colors.dart';
+import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:lume_mobile/providers/cart_provider.dart'; // Pastikan import provider
+import 'package:lume_mobile/providers/cart_provider.dart'; 
 import 'dart:convert';
+import 'package:lume_mobile/auth/screens/login_page.dart';
 
 class AppProductCard extends StatefulWidget {
   final Product product;
   final Function(GlobalKey) runAnimation; 
+  final ValueChanged<bool>? onWishlistChanged;
 
   const AppProductCard({
     super.key, 
     required this.product, 
-    required this.runAnimation
+    required this.runAnimation,
+    this.onWishlistChanged,
   });
 
   @override
@@ -23,50 +29,130 @@ class AppProductCard extends StatefulWidget {
 
 class _AppProductCardState extends State<AppProductCard> {
   final GlobalKey widgetKey = GlobalKey(); 
+  late bool _isWishlisted;
+
+  @override
+  void initState() {
+    super.initState();
+    _isWishlisted = widget.product.isWishlisted;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final request = context.watch<CookieRequest>();
+
+    // If user logs out, clear local wishlist state so the heart returns to default
+    if (!request.loggedIn && _isWishlisted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _isWishlisted = false);
+        }
+      });
+    }
+  }
 
   void _handleAddToCart(CookieRequest request) async {
-    // Hapus animasi dari sini, kita pindahkan ke bawah setelah request sukses
-    
-    // Kirim Request ke Server
+    // 1. Cek dulu: user udah login belum?
+    if (!request.loggedIn) {
+  if (!mounted) return;
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const LoginPage(showBack: true),
+    ),
+  );
+  return;
+}
+    // 2. Kalau sudah login -> baru call server
     try {
       final response = await request.postJson(
-        "http://localhost:8000/cart/flutter/add/", // Ganti 10.0.2.2 jika emulator
+        apiPath("/cart/flutter/add/"),
         jsonEncode(<String, dynamic>{
           'product_id': widget.product.id,
           'quantity': 1,
         }),
       );
 
-      if (mounted) {
-        if (response['ok'] == true) {
-          // --- SUKSES: BARU JALANKAN ANIMASI ---
-          widget.runAnimation(widgetKey);
-          
-          // Update badge cart
-          context.read<CartProvider>().fetchCartCount(request);
+      if (!mounted) return;
 
-          // Optional: Hapus snackbar success jika animasi sudah cukup mewakili
-          // atau biarkan tetap ada sebagai konfirmasi teks
-          /* ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Added to cart"), duration: Duration(seconds: 1)),
-          ); */
-        } else {
-          // --- GAGAL: TAMPILKAN ERROR (TANPA ANIMASI) ---
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message'] ?? "Failed to add"), 
-              backgroundColor: Colors.red
-            ),
-          );
-        }
+      if (response['ok'] == true) {
+        // sukses → animasi + update badge
+        widget.runAnimation(widgetKey);
+        context.read<CartProvider>().fetchCartCount(request);
+
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        _showSnackBar("${widget.product.name} added to cart!");
+      } else {
+        // ❌ gagal (misal dari backend: out of stock, harus login, dll.)
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        _showSnackBar(response['message'] ?? "Failed to add");
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-        );
-      }
+      if (!mounted) return;
+      _showSnackBar("Error: $e");
     }
+  }
+
+  void _showOutOfStockMessage() {
+    if (!mounted) return;
+    _showSnackBar("Product is out of stock.");
+  }
+
+  Future<void> _toggleWishlist(CookieRequest request) async {
+    if (!request.loggedIn) {
+      if (!mounted) return;
+      _showSnackBar("Please log in to use wishlist.");
+      return;
+    }
+
+    final previous = _isWishlisted;
+    setState(() {
+      _isWishlisted = !_isWishlisted;
+    });
+
+    try {
+      final resp = await request.postJson(
+        apiPath("/catalog/api/wishlist/toggle/${widget.product.id}/"),
+        jsonEncode(<String, dynamic>{}),
+      );
+      if (!mounted) return;
+
+      if (resp['ok'] == true) {
+        setState(() {
+          _isWishlisted = resp['wishlisted'] == true;
+        });
+        widget.onWishlistChanged?.call(_isWishlisted);
+      } else {
+        setState(() {
+          _isWishlisted = previous;
+        });
+        _showSnackBar("Failed to update wishlist.");
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isWishlisted = previous;
+      });
+      _showSnackBar("Failed to update wishlist.");
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: const Color(0xFF6E7D6B),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 
   @override
@@ -75,6 +161,8 @@ class _AppProductCardState extends State<AppProductCard> {
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0
     );
+    final bool isOutOfStock =
+        !widget.product.inStock || widget.product.stock <= 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -119,17 +207,67 @@ class _AppProductCardState extends State<AppProductCard> {
                     width: double.infinity,
                     child: Stack(
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: widget.product.thumbnail.isNotEmpty
-                              ? Image.network(
-                                  widget.product.thumbnail,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                )
-                              : const Center(child: Icon(Icons.photo)),
+                        Positioned.fill(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: widget.product.thumbnail.isNotEmpty
+                                ? Image.network(
+                                    widget.product.thumbnail,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  )
+                                : const Center(child: Icon(Icons.photo)),
+                          ),
                         ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: InkWell(
+                            onTap: () => _toggleWishlist(request),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white70,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                _isWishlisted
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color:
+                                    _isWishlisted ? Colors.red : Colors.black87,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (isOutOfStock)
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                color: Colors.black.withOpacity(0.45),
+                                alignment: Alignment.center,
+                                child: const Text(
+                                  'Out of stock',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -154,11 +292,15 @@ class _AppProductCardState extends State<AppProductCard> {
                     
                     // Tombol Add to Cart
                     InkWell(
-                      onTap: () => _handleAddToCart(request),
+                      onTap: isOutOfStock
+                          ? _showOutOfStockMessage
+                          : () => _handleAddToCart(request),
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFA8AF9F),
+                          color: isOutOfStock
+                              ? Colors.grey
+                              : const Color(0xFFA8AF9F),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.shopping_cart_outlined, size: 16, color: Colors.white),

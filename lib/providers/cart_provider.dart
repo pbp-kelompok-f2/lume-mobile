@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lume_mobile/models/cart_items.dart';
+import 'package:lume_mobile/config/api_config.dart';
 
 class CartProvider extends ChangeNotifier {
   List<CartItem> _cartItems = [];
@@ -30,10 +31,8 @@ class CartProvider extends ChangeNotifier {
     _isLoading = true;
     // notifyListeners(); // kalau mau ada loading spinner realtime
 
-    const String baseUrl = "http://localhost:8000";
-
     try {
-      final response = await request.get('$baseUrl/cart/flutter/list/');
+      final response = await request.get(apiPath('/cart/flutter/list/'));
 
       List<CartItem> items = [];
 
@@ -62,32 +61,51 @@ class CartProvider extends ChangeNotifier {
     notifyListeners(); // Memberitahu semua widget (Badge/CartPage) untuk rebuild
   }
 
-  Future<bool> addToCart(CookieRequest request, String productId) async {
-    // ❗ Kalau belum login sebaiknya langsung return false
-    if (!request.loggedIn) {
-      return false;
-    }
-
-    const String baseUrl = "http://localhost:8000";
-
-    final response = await request.postJson(
-      "$baseUrl/cart/flutter/add/",
-      jsonEncode(<String, dynamic>{
-        'product_id': productId, // Kirim UUID string apa adanya
-        'quantity': 1,
-      }),
+  Future<bool> addToCart(
+  BuildContext context,
+  CookieRequest request,
+  String productId,
+) async {
+  // Kalau belum login -> tampilkan popup dan JANGAN call API
+  if (!request.loggedIn) {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Login required"),
+        content: const Text(
+          "Please log in before adding items to your cart.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
     );
-
-    if (response['ok'] == true) {
-      // Ambil ulang cart + counter supaya badge ke-update
-      await Future.delayed(const Duration(milliseconds: 100));
-      await fetchCart(request);
-      await fetchCartCount(request);
-      return true;
-    } else {
-      return false;
-    }
+    return false;
   }
+
+  final response = await request.postJson(
+    apiPath("/cart/flutter/add/"),
+    jsonEncode(<String, dynamic>{
+      'product_id': productId, // Kirim UUID string apa adanya
+      'quantity': 1,
+    }),
+  );
+
+  if (response['ok'] == true) {
+    // Ambil ulang cart + counter supaya badge ke-update
+    await Future.delayed(const Duration(milliseconds: 100));
+    await fetchCart(request);
+    await fetchCartCount(request);
+    return true;
+  } else {
+    // (opsional) bisa tambahin snackbar kalau gagal
+    return false;
+  }
+}
+
 
   Future<void> fetchCartCount(CookieRequest request) async {
     // ❗ Again, kalau belum login → counter = 0
@@ -97,10 +115,9 @@ class CartProvider extends ChangeNotifier {
       return;
     }
 
-    const String baseUrl = "http://localhost:8000";
     try {
       // Panggil endpoint list untuk dapat total_items
-      final response = await request.get('$baseUrl/cart/flutter/list/');
+      final response = await request.get(apiPath('/cart/flutter/list/'));
 
       if (response != null && response['ok'] == true) {
         _counter = response['total_items'] ?? 0;

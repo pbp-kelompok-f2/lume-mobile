@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lume_mobile/models/product.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/cart/screens/cart.dart';
@@ -8,6 +9,10 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
+import 'package:lume_mobile/auth/screens/login_page.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
+
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -22,56 +27,113 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   final GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>();
   final GlobalKey imageKey = GlobalKey();
   late Function(GlobalKey) runAddToCartAnimation;
+  late bool _isWishlisted;
 
-  void _addToCart(CookieRequest request) async {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Processing..."), duration: Duration(milliseconds: 500)),
+  @override
+  void initState() {
+    super.initState();
+    _isWishlisted = widget.product.isWishlisted;
+  }
+
+  Future<void> _addToCart(CookieRequest request) async {
+  // 1. Guest → suruh login dulu
+  if (!request.loggedIn) {
+  if (!mounted) return;
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const LoginPage(showBack: true),
+    ),
+  );
+  return;
+}
+  try {
+    final response = await request.postJson(
+      apiPath("/cart/flutter/add/"),
+      jsonEncode(<String, dynamic>{
+        'product_id': widget.product.id,
+        'quantity': 1,
+      }),
     );
 
+    if (!mounted) return;
+
+    if (response['ok'] == true) {
+      // sukses -> animasi + update badge + snackbar hijau
+      runAddToCartAnimation(imageKey);
+      context.read<CartProvider>().fetchCartCount(request);
+
+      _showSnackBar("${widget.product.name} added to cart!");
+    } else {
+      // gagal -> pakai message dari backend (mis. "Exceeding stock. Only X left.")
+      final msg = response['message'] ?? "Failed to add item to cart.";
+      _showSnackBar(msg);
+    }
+  } catch (e) {
+    if (!mounted) return;
+    _showSnackBar("Error: $e");
+  }
+}
+
+  Future<void> _toggleWishlist(CookieRequest request) async {
+    if (!request.loggedIn) {
+      if (!mounted) return;
+      _showSnackBar("Please log in to use wishlist.");
+      return;
+    }
+
+    final previous = _isWishlisted;
+    setState(() {
+      _isWishlisted = !_isWishlisted;
+    });
+
     try {
-      final response = await request.postJson(
-        "http://localhost:8000/cart/flutter/add/",
-        jsonEncode(<String, dynamic>{
-          'product_id': widget.product.id,
-          'quantity': 1,
-        }),
+      final resp = await request.postJson(
+        apiPath("/catalog/api/wishlist/toggle/${widget.product.id}/"),
+        jsonEncode(<String, dynamic>{}),
       );
+      if (!mounted) return;
 
-      if (mounted) {
-        if (response['ok'] == true) {
-          runAddToCartAnimation(imageKey);
-          context.read<CartProvider>().fetchCartCount(request);
-
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("${widget.product.name} added to cart!"),
-              backgroundColor: LumeColors.sageGreen,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response['message'] ?? "Failed to add"),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      if (resp['ok'] == true) {
+        setState(() {
+          _isWishlisted = resp['wishlisted'] == true;
+        });
+      } else {
+        setState(() {
+          _isWishlisted = previous;
+        });
+        _showSnackBar("Failed to update wishlist.");
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-        );
-      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isWishlisted = previous;
+      });
+      _showSnackBar("Failed to update wishlist.");
     }
   }
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: const Color(0xFF6E7D6B),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    final request = context.read<CookieRequest>();
+    final request = context.watch<CookieRequest>();
     final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0
     );
@@ -86,27 +148,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       },
       child: Scaffold(
         backgroundColor: LumeColors.creamBackground,
-        
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 16.0),
-            child: IconButton(
-              icon: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(Icons.arrow_back, color: LumeColors.darkText, size: 24),
-                ),
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
+        appBar: LumeAppBar(
+          title: "Product Detail",
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 16.0),
@@ -115,7 +158,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const CartPage()),
-                  ).then((_) => context.read<CartProvider>().fetchCartCount(request));
+                  ).then((_) {
+                    final req = context.read<CookieRequest>();
+                    if (req.loggedIn) {
+                      context.read<CartProvider>().fetchCartCount(req);
+                    }
+                  });
                 },
                 child: AddToCartIcon(
                   key: cartKey,
@@ -125,29 +173,34 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   icon: Consumer<CartProvider>(
                     builder: (context, cartProvider, child) {
                       Widget iconBtn = Container(
-                        height: 44, width: 44,
+                        height: 44,
+                        width: 44,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.grey.shade300),
                         ),
                         child: const Center(
-                          child: Icon(Icons.shopping_cart_outlined, color: LumeColors.darkText, size: 24),
+                          child: Icon(
+                            Icons.shopping_cart_outlined,
+                            color: LumeColors.darkText,
+                            size: 24,
+                          ),
                         ),
                       );
 
-                      // Only show badge if counter > 0
-                      if (cartProvider.counter > 0) {
-                        return Badge(
-                          label: Text(
-                            "${cartProvider.counter}",
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: LumeColors.darkGreen,
-                          child: iconBtn,
-                        );
+                      if (!request.loggedIn || cartProvider.counter <= 0) {
+                        return iconBtn;
                       }
-                      return iconBtn;
+
+                      return Badge(
+                        label: Text(
+                          "${cartProvider.counter}",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: LumeColors.darkGreen,
+                        child: iconBtn,
+                      );
                     },
                   ),
                 ),
@@ -155,7 +208,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             ),
           ],
         ),
-        extendBodyBehindAppBar: true,
 
         body: Column(
           children: [
@@ -180,6 +232,33 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 errorBuilder: (ctx, error, stackTrace) => const Center(
                                   child: Icon(Icons.broken_image, size: 64, color: Colors.grey),
                                 ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 64,
+                          left: 16,
+                          child: InkWell(
+                            onTap: () => _toggleWishlist(request),
+                            borderRadius: BorderRadius.circular(24),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white70,
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                _isWishlisted ? Icons.favorite : Icons.favorite_border,
+                                color: _isWishlisted ? Colors.red : Colors.black87,
+                                size: 22,
                               ),
                             ),
                           ),

@@ -8,6 +8,7 @@ class Product {
   final String thumbnail;
   final bool inStock;
   final int stock;
+  final bool isWishlisted;
 
   Product({
     required this.id,
@@ -17,6 +18,7 @@ class Product {
     required this.thumbnail,
     required this.inStock,
     required this.stock, 
+    this.isWishlisted = false,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class Product {
       thumbnail: json['thumbnail_proxy'] ?? json['thumbnail'] ?? "",
       inStock: json['in_stock'],
       stock: json['stock'] ?? 0, 
+      isWishlisted: json['is_wishlisted'] ?? json['in_wishlist'] ?? false,
     );
   }
 }

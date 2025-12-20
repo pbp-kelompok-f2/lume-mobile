@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/auth/screens/register_page.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
+import 'package:lume_mobile/admin/screens/admin_home_page.dart';
+import 'package:lume_mobile/widgets/lume_app_bar.dart';
+import 'package:lume_mobile/config/api_config.dart';
 
 class LoginPage extends StatefulWidget {
   // dipakai untuk menentukan apakah perlu tampilkan tombol back
@@ -31,19 +34,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
       appBar: widget.showBack
-          ? AppBar(
-              backgroundColor: LumeColors.creamBackground,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: LumeColors.darkGreen,
-                ),
-                onPressed: () {
-                  Navigator.pop(context); // balik ke halaman sebelumnya
-                },
-              ),
-            )
+          ? const LumeAppBar(title: "Login")
           : null,
       body: Center(
         child: SingleChildScrollView(
@@ -51,7 +42,6 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.spa, size: 80, color: LumeColors.darkGreen),
               const SizedBox(height: 20),
               const Text(
                 "Welcome Back",
@@ -107,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                           String password = _passwordController.text;
 
                           final response = await request.login(
-                            "http://localhost:8000/user/api/login/",
+                            apiPath("/user/api/login/"),
                             {
                               'username': username,
                               'password': password,
@@ -115,54 +105,63 @@ class _LoginPageState extends State<LoginPage> {
                             },
                           );
 
-                          if (response.containsKey('ok') &&
-                              response['ok'] == true) {
-                            if (context.mounted) {
-                              String user =
-                                  response['username'] ?? username;
-                              context
-                                  .read<UserProvider>()
-                                  .setUsername(user);
+                          if (request.loggedIn) {
+          if (context.mounted) {
+            // --- LOGIKA BARU DI SINI ---
+            
+            // 1. Ambil data dari response JSON (sesuai struktur Django yang baru)
+            // Struktur: { "ok": true, "user": { "username": "...", "is_staff": true } }
+            final userData = response['user']; 
+            String user = userData['username'];
+            bool isAdmin = userData['is_staff'] ?? false; // Default false jika null
+            String picUrl = userData['profile_picture'] ?? "";
 
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Login successful!"),
-                                  backgroundColor: LumeColors.sageGreen,
-                                ),
-                              );
+            // 2. Simpan ke Provider
+            context.read<UserProvider>().setUsername(user, isAdmin: isAdmin, profilePicture: picUrl);
 
-                              // setelah login, ganti ke MainScaffold
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const MainScaffold(),
-                                ),
-                              );
-                            }
-                          } else {
-                            if (context.mounted) {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Login Failed'),
-                                  content: Text(
-                                    response['message'] ??
-                                        "Invalid credentials",
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      child: const Text('OK'),
-                                      onPressed: () =>
-                                          Navigator.pop(context),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          }
-                          setState(() => _isLoading = false);
-                        },
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Login successful!"),
+                backgroundColor: LumeColors.sageGreen,
+              ),
+            );
+
+            // 3. Navigasi Berdasarkan Role
+            if (isAdmin) {
+              // Jika Admin -> Ke Admin Dashboard
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AdminHomePage()),
+              );
+            } else {
+              // Jika User Biasa -> Ke Main Scaffold
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const MainScaffold()),
+              );
+            }
+          }
+        } else {
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Login Failed'),
+                content: Text(
+                  response['detail'] ?? "Invalid credentials", // API kadang kirim 'detail' atau 'message'
+                ),
+                actions: [
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+        setState(() => _isLoading = false);
+      },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: LumeColors.darkGreen,
                     shape: RoundedRectangleBorder(
