@@ -172,7 +172,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
                     const SizedBox(height: 40),
 
-                    // === TOMBOL LOGOUT (PINDAH KE BAWAH) ===
                     SizedBox(
                       width: double.infinity,
                       height: 55,
@@ -289,7 +288,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        // Pindahkan shadow ke sini agar tetap terlihat
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.05), 
@@ -298,15 +296,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           )
         ],
       ),
-      // Gunakan Material untuk memotong (clip) efek hover
       child: Material(
-        color: const Color.fromARGB(255, 237, 233, 222), // Warna background pindah ke Material
-        borderRadius: BorderRadius.circular(16), // Tentukan sudut tumpul di sini
-        child: InkWell( // Gunakan InkWell atau ListTile dengan shape
-          borderRadius: BorderRadius.circular(16), // PENTING: Agar hover mengikuti sudut
+        color: const Color.fromARGB(255, 237, 233, 222), 
+        borderRadius: BorderRadius.circular(16), 
+        child: InkWell( 
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(16.0), // Padding manual karena kita ganti ListTile
+            padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
                 Container(

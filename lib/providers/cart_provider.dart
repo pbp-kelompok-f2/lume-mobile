@@ -13,7 +13,6 @@ class CartProvider extends ChangeNotifier {
   List<CartItem> get cartItems => _cartItems;
   bool get isLoading => _isLoading;
 
-  // Helper: reset state kalau user belum login / logout
   void reset() {
     _cartItems = [];
     _counter = 0;
@@ -22,21 +21,18 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<void> fetchCart(CookieRequest request) async {
-    // ❗ Kalau belum login → kosongin cart & counter
     if (!request.loggedIn) {
       reset();
       return;
     }
 
     _isLoading = true;
-    // notifyListeners(); // kalau mau ada loading spinner realtime
 
     try {
       final response = await request.get(apiPath('/cart/flutter/list/'));
 
       List<CartItem> items = [];
 
-      // Sesuai dengan CartPage: response['items']
       if (response != null && response['items'] != null) {
         for (var d in response['items']) {
           if (d != null) {
@@ -47,7 +43,6 @@ class CartProvider extends ChangeNotifier {
 
       _cartItems = items;
 
-      // Update counter dari backend kalau ada, fallback ke length
       if (response != null && response['total_items'] != null) {
         _counter = response['total_items'] as int;
       } else {
@@ -58,7 +53,7 @@ class CartProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners(); // Memberitahu semua widget (Badge/CartPage) untuk rebuild
+    notifyListeners(); 
   }
 
   Future<bool> addToCart(
@@ -66,7 +61,7 @@ class CartProvider extends ChangeNotifier {
   CookieRequest request,
   String productId,
 ) async {
-  // Kalau belum login -> tampilkan popup dan JANGAN call API
+
   if (!request.loggedIn) {
     await showDialog(
       context: context,
@@ -89,26 +84,23 @@ class CartProvider extends ChangeNotifier {
   final response = await request.postJson(
     apiPath("/cart/flutter/add/"),
     jsonEncode(<String, dynamic>{
-      'product_id': productId, // Kirim UUID string apa adanya
+      'product_id': productId,
       'quantity': 1,
     }),
   );
 
   if (response['ok'] == true) {
-    // Ambil ulang cart + counter supaya badge ke-update
     await Future.delayed(const Duration(milliseconds: 100));
     await fetchCart(request);
     await fetchCartCount(request);
     return true;
   } else {
-    // (opsional) bisa tambahin snackbar kalau gagal
     return false;
   }
 }
 
 
   Future<void> fetchCartCount(CookieRequest request) async {
-    // ❗ Again, kalau belum login → counter = 0
     if (!request.loggedIn) {
       _counter = 0;
       notifyListeners();
@@ -116,12 +108,12 @@ class CartProvider extends ChangeNotifier {
     }
 
     try {
-      // Panggil endpoint list untuk dapat total_items
+
       final response = await request.get(apiPath('/cart/flutter/list/'));
 
       if (response != null && response['ok'] == true) {
         _counter = response['total_items'] ?? 0;
-        notifyListeners(); // Kabari semua widget yang dengar
+        notifyListeners();
       }
     } catch (e) {
       print("Gagal ambil jumlah cart: $e");

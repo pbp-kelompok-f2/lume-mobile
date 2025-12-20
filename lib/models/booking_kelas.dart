@@ -75,11 +75,11 @@ class ClassSession {
 
 class Booking {
   final int id;
-  final int user; // Biasanya API mengembalikan ID user
-  final ClassSession session; // Nested object untuk detail sesi kelas
+  final int user;
+  final ClassSession session;
   final String daySelected;
   final bool isCancelled;
-  final double priceAtBooking; // DecimalField di Django jadi double
+  final double priceAtBooking;
   final DateTime createdAt;
 
   Booking({
@@ -95,12 +95,10 @@ class Booking {
   factory Booking.fromJson(Map<String, dynamic> json) => Booking(
         id: json["id"],
         user: json["user"], 
-        // Asumsi API Anda mengirimkan detail session (nested), 
-        // jika hanya ID, ubah tipe data menjadi int.
+
         session: ClassSession.fromJson(json["session"]),
         daySelected: json["day_selected"] ?? "",
         isCancelled: json["is_cancelled"],
-        // Parsing string/number ke double untuk DecimalField
         priceAtBooking: double.parse(json["price_at_booking"].toString()),
         createdAt: DateTime.parse(json["created_at"]),
       );

@@ -30,7 +30,6 @@ class _CartPageState extends State<CartPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final request = context.read<CookieRequest>();
 
-      // Kalau belum login -> redirect ke halaman login
       if (!request.loggedIn) {
         Navigator.pushReplacement(
           context,
@@ -41,7 +40,6 @@ class _CartPageState extends State<CartPage> {
         return;
       }
 
-      // Kalau sudah login -> fetch cart
       _fetchCartItems();
     });
   }
@@ -49,7 +47,6 @@ class _CartPageState extends State<CartPage> {
   Future<void> _fetchCartItems() async {
     final request = context.read<CookieRequest>();
 
-    // Defensive: kalau tiba-tiba ke-call tapi user belum login
     if (!request.loggedIn) {
       setState(() {
         _cartItems = [];
@@ -61,7 +58,6 @@ class _CartPageState extends State<CartPage> {
 
     setState(() => _isLoading = true);
     try {
-      // Panggil endpoint list flutter
       var response = await request.get(apiPath('/cart/flutter/list/'));
 
       List<CartItem> items = [];
@@ -76,7 +72,6 @@ class _CartPageState extends State<CartPage> {
       setState(() {
         _cartItems = items;
 
-        // Inisialisasi selected IDs dari is_selected backend
         _selectedItemIds
           ..clear()
           ..addAll(
@@ -91,7 +86,6 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  // Hitung Total Harga (hanya item yang dicentang)
   double get _totalPrice {
     double total = 0;
     for (var item in _cartItems) {
@@ -102,12 +96,10 @@ class _CartPageState extends State<CartPage> {
     return total;
   }
 
-  // Toggle seleksi semua item (sinkron ke backend)
   void _toggleSelectAll(bool? value) async {
     final request = context.read<CookieRequest>();
 
     if (value == true) {
-      // SELECT ALL di backend
       try {
         final response = await request.postJson(
           apiPath('/cart/flutter/select-all/'),
@@ -128,7 +120,6 @@ class _CartPageState extends State<CartPage> {
         debugPrint("Error select all: $e");
       }
     } else {
-      // UNSELECT ALL di backend
       try {
         final response = await request.postJson(
           apiPath('/cart/flutter/unselect-all/'),
@@ -149,7 +140,6 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  // Toggle satu item (checkbox per item) → sync backend
   Future<void> _toggleItemSelection(CartItem item, bool isSelected) async {
     final request = context.read<CookieRequest>();
 
@@ -181,7 +171,6 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  // Update quantity (sinkron ke set-qty backend)
   Future<void> _updateItemQuantity(int itemId, int newQty) async {
     final request = context.read<CookieRequest>();
 
@@ -195,7 +184,6 @@ class _CartPageState extends State<CartPage> {
       );
 
       if (response['ok'] == true) {
-        // backend balikin quantity final (bisa 0 kalau di-delete)
         final updatedQty = response['quantity'] ?? newQty;
 
         setState(() {
@@ -214,7 +202,6 @@ class _CartPageState extends State<CartPage> {
           }
         });
       } else {
-        // kasus: stok kurang, dsb.
         final message = response['message'] ?? 'Failed to update quantity.';
         final safeQty = response['quantity'];
 
@@ -235,7 +222,6 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  // Delete item (sinkron ke backend)
   Future<void> _deleteItem(int itemId) async {
     final request = context.read<CookieRequest>();
 
@@ -274,7 +260,6 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  // Modal konfirmasi remove (theme Lume)
   Future<bool> _showRemoveConfirmModal({
     required String title,
     required String message,
@@ -370,7 +355,6 @@ class _CartPageState extends State<CartPage> {
     return result ?? false;
   }
 
-  // SnackBar seragam (sesuai tim)
   void _showLumeSnackBar(String message) {
     if (!mounted) return;
 
@@ -404,7 +388,6 @@ class _CartPageState extends State<CartPage> {
             )
           : Column(
               children: [
-                // === List Items ===
                 Expanded(
                   child: _cartItems.isEmpty
                       ? Center(
@@ -441,7 +424,6 @@ class _CartPageState extends State<CartPage> {
                         ),
                 ),
 
-                // === Order Summary ===
                 if (_cartItems.isNotEmpty) _buildOrderSummary(isAllSelected),
               ],
             ),
@@ -467,7 +449,6 @@ class _CartPageState extends State<CartPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Checkbox
           SizedBox(
             width: 24,
             height: 24,
@@ -489,7 +470,6 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(width: 12),
 
-          // Gambar
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
@@ -509,7 +489,6 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(width: 16),
 
-          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -540,7 +519,6 @@ class _CartPageState extends State<CartPage> {
             ),
           ),
 
-          // Controls
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -644,7 +622,6 @@ class _CartPageState extends State<CartPage> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row Select All
           Row(
             children: [
               SizedBox(
@@ -685,7 +662,6 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(height: 8),
 
-          // Row Total
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -759,7 +735,6 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(height: 10),
 
-          // Continue shopping
           SizedBox(
             width: double.infinity,
             height: 44,

@@ -22,8 +22,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
     decimalDigits: 0,
   );
 
-  // Sesuaikan URL (10.0.2.2 untuk Emulator Android)
-  // final String baseUrl = "http://localhost:8000"; 
+
   Future<List<OrderHistory>> fetchOrderHistory(CookieRequest request) async {
     final response = await request.get(apiPath('/checkout/api/history/'));
     
@@ -102,7 +101,6 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // === HEADER: Date & Status ===
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Row(
@@ -129,8 +127,7 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
           
           const Divider(height: 1, thickness: 0.5),
 
-          // === PRODUCT LIST ===
-          // Menampilkan list produk di dalam kartu
+
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -144,7 +141,6 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
 
           const Divider(height: 1, thickness: 0.5),
 
-          // === FOOTER: Total Price ===
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -178,7 +174,6 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // === IMAGE ===
         Container(
           width: 60,
           height: 60,
@@ -203,7 +198,6 @@ class _PurchaseHistoryPageState extends State<PurchaseHistoryPage> {
         
         const SizedBox(width: 12),
 
-        // === DETAILS ===
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

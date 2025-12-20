@@ -42,7 +42,6 @@ class _AppProductCardState extends State<AppProductCard> {
     super.didChangeDependencies();
     final request = context.watch<CookieRequest>();
 
-    // If user logs out, clear local wishlist state so the heart returns to default
     if (!request.loggedIn && _isWishlisted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -53,7 +52,6 @@ class _AppProductCardState extends State<AppProductCard> {
   }
 
   void _handleAddToCart(CookieRequest request) async {
-    // 1. Cek dulu: user udah login belum?
     if (!request.loggedIn) {
   if (!mounted) return;
 
@@ -65,7 +63,6 @@ class _AppProductCardState extends State<AppProductCard> {
   );
   return;
 }
-    // 2. Kalau sudah login -> baru call server
     try {
       final response = await request.postJson(
         apiPath("/cart/flutter/add/"),
@@ -78,14 +75,12 @@ class _AppProductCardState extends State<AppProductCard> {
       if (!mounted) return;
 
       if (response['ok'] == true) {
-        // sukses → animasi + update badge
         widget.runAnimation(widgetKey);
         context.read<CartProvider>().fetchCartCount(request);
 
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         _showSnackBar("${widget.product.name} added to cart!");
       } else {
-        // ❌ gagal (misal dari backend: out of stock, harus login, dll.)
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         _showSnackBar(response['message'] ?? "Failed to add");
       }
@@ -199,11 +194,10 @@ class _AppProductCardState extends State<AppProductCard> {
                 ),
                 const SizedBox(height: 12),
 
-                // --- BAGIAN FOTO (Key Animasi di sini) ---
                 AspectRatio(
                   aspectRatio: 1.0, 
                   child: Container(
-                    key: widgetKey, // SUMBER ANIMASI
+                    key: widgetKey,
                     width: double.infinity,
                     child: Stack(
                       children: [
@@ -276,7 +270,6 @@ class _AppProductCardState extends State<AppProductCard> {
                 const Spacer(),
                 const SizedBox(height: 8),
 
-                // Footer
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -290,7 +283,6 @@ class _AppProductCardState extends State<AppProductCard> {
                     ),
                     const SizedBox(width: 4),
                     
-                    // Tombol Add to Cart
                     InkWell(
                       onTap: isOutOfStock
                           ? _showOutOfStockMessage

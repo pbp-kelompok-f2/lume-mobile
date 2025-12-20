@@ -36,7 +36,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Future<void> _addToCart(CookieRequest request) async {
-  // 1. Guest → suruh login dulu
   if (!request.loggedIn) {
   if (!mounted) return;
 
@@ -60,13 +59,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (!mounted) return;
 
     if (response['ok'] == true) {
-      // sukses -> animasi + update badge + snackbar hijau
       runAddToCartAnimation(imageKey);
       context.read<CartProvider>().fetchCartCount(request);
 
       _showSnackBar("${widget.product.name} added to cart!");
     } else {
-      // gagal -> pakai message dari backend (mis. "Exceeding stock. Only X left.")
       final msg = response['message'] ?? "Failed to add item to cart.";
       _showSnackBar(msg);
     }
@@ -168,7 +165,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 child: AddToCartIcon(
                   key: cartKey,
                   badgeOptions: const BadgeOptions(
-                    active: false, // Disable built-in badge
+                    active: false, 
                   ),
                   icon: Consumer<CartProvider>(
                     builder: (context, cartProvider, child) {

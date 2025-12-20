@@ -10,12 +10,11 @@ import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:lume_mobile/config/api_config.dart';
 
 class LoginPage extends StatefulWidget {
-  // dipakai untuk menentukan apakah perlu tampilkan tombol back
   final bool showBack;
 
   const LoginPage({
     super.key,
-    this.showBack = false, // default: login biasa tanpa back
+    this.showBack = false,
   });
 
   @override
@@ -53,7 +52,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 40),
 
-              // Username
               TextField(
                 controller: _usernameController,
                 decoration: InputDecoration(
@@ -68,7 +66,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
-              // Password
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -84,7 +81,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 24),
 
-              // Login button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -107,16 +103,12 @@ class _LoginPageState extends State<LoginPage> {
 
                           if (request.loggedIn) {
           if (context.mounted) {
-            // --- LOGIKA BARU DI SINI ---
-            
-            // 1. Ambil data dari response JSON (sesuai struktur Django yang baru)
-            // Struktur: { "ok": true, "user": { "username": "...", "is_staff": true } }
+
             final userData = response['user']; 
             String user = userData['username'];
             bool isAdmin = userData['is_staff'] ?? false; // Default false jika null
             String picUrl = userData['profile_picture'] ?? "";
 
-            // 2. Simpan ke Provider
             context.read<UserProvider>().setUsername(user, isAdmin: isAdmin, profilePicture: picUrl);
 
             ScaffoldMessenger.of(context).showSnackBar(
@@ -126,15 +118,12 @@ class _LoginPageState extends State<LoginPage> {
               ),
             );
 
-            // 3. Navigasi Berdasarkan Role
             if (isAdmin) {
-              // Jika Admin -> Ke Admin Dashboard
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const AdminHomePage()),
               );
             } else {
-              // Jika User Biasa -> Ke Main Scaffold
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const MainScaffold()),
@@ -148,7 +137,7 @@ class _LoginPageState extends State<LoginPage> {
               builder: (context) => AlertDialog(
                 title: const Text('Login Failed'),
                 content: Text(
-                  response['detail'] ?? "Invalid credentials", // API kadang kirim 'detail' atau 'message'
+                  response['detail'] ?? "Invalid credentials", 
                 ),
                 actions: [
                   TextButton(
@@ -184,7 +173,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
-              // Sign up link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
