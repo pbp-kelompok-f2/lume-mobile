@@ -7,6 +7,7 @@ import 'package:lume_mobile/main/screens/main_scaffold.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:lume_mobile/providers/user_provider.dart';
 
+// tes build bitrise
 void main() {
   runApp(const MyApp());
 }
