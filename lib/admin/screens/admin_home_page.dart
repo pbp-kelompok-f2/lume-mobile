@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lume_mobile/admin/screens/admin_product_list.dart';
-import 'package:lume_mobile/admin/screens/admin_class_list_page.dart'; // ✅ Import halaman admin kelas
+import 'package:lume_mobile/admin/screens/admin_class_list_page.dart'; 
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/profile/screens/profile_page.dart';
 
@@ -14,15 +14,11 @@ class AdminHomePage extends StatefulWidget {
 class _AdminHomePageState extends State<AdminHomePage> {
   int _selectedIndex = 0;
 
-  // Daftar halaman admin
   final List<Widget> _pages = [
-    // Tab 0: Admin Produk
     const AdminProductListPage(),
     
-    // Tab 1: Admin Booking Kelas (Sudah diganti)
     const AdminClassListPage(), 
     
-    // Tab 2: Profile
     const ProfilePage(),
   ];
 
@@ -49,7 +45,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             label: 'Products',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.class_), // Icon kelas
+            icon: Icon(Icons.class_),
             label: 'Classes',
           ),
           BottomNavigationBarItem(

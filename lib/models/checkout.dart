@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-/// Helper encode/decode kalau kamu nanti perlu
 CartSummary cartSummaryFromJson(String str) =>
     CartSummary.fromJson(json.decode(str) as Map<String, dynamic>);
 
@@ -11,9 +10,6 @@ OrderResult orderResultFromJson(String str) =>
 
 String orderResultToJson(OrderResult data) => json.encode(data.toJson());
 
-/// =======================
-/// CartItem
-/// =======================
 class CartItem {
   final int id;
   final int productId;
@@ -58,18 +54,15 @@ class CartItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'product_id': productId,
-        'product_name': productName,
-        'unit_price': unitPrice,
-        'quantity': quantity,
-        'line_total': lineTotal,
-      };
+    'id': id,
+    'product_id': productId,
+    'product_name': productName,
+    'unit_price': unitPrice,
+    'quantity': quantity,
+    'line_total': lineTotal,
+  };
 }
 
-/// =======================
-/// CartSummary
-/// =======================
 class CartSummary {
   final List<CartItem> items;
   final double subtotal;
@@ -113,21 +106,19 @@ class CartSummary {
   }
 
   Map<String, dynamic> toJson() => {
-        'items': items.map((e) => e.toJson()).toList(),
-        'subtotal': subtotal,
-        'shipping': shipping,
-        'total': total,
-        'count': count,
-      };
+    'items': items.map((e) => e.toJson()).toList(),
+    'subtotal': subtotal,
+    'shipping': shipping,
+    'total': total,
+    'count': count,
+  };
 }
 
-/// =======================
-/// OrderResult
-/// =======================
+
 class OrderResult {
   final bool success;
   final String message;
-  final String? orderId; // UUID/string dari Django
+  final String? orderId;
   final double? subtotal;
   final double? shipping;
   final double? total;
@@ -160,11 +151,11 @@ class OrderResult {
   }
 
   Map<String, dynamic> toJson() => {
-        'success': success,
-        'message': message,
-        'order_id': orderId,
-        'subtotal': subtotal,
-        'shipping': shipping,
-        'total': total,
-      };
+    'success': success,
+    'message': message,
+    'order_id': orderId,
+    'subtotal': subtotal,
+    'shipping': shipping,
+    'total': total,
+  };
 }

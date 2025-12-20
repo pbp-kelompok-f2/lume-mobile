@@ -16,9 +16,7 @@ class AdminClassListPage extends StatefulWidget {
 }
 
 class _AdminClassListPageState extends State<AdminClassListPage> {
-  // Fungsi Fetch Data Kelas
   Future<List<ClassSession>> fetchClasses(CookieRequest request) async {
-    // Gunakan endpoint JSON yang sudah ada (sama seperti user biasa)
     final response = await request.get(
       apiPath('/bookingkelas/json/'),
     );
@@ -37,11 +35,10 @@ class _AdminClassListPageState extends State<AdminClassListPage> {
     return listSessions;
   }
 
-  // Fungsi Hapus Kelas
   Future<void> deleteClass(CookieRequest request, int id) async {
     try {
       final response = await request.postJson(
-        apiPath('/bookingkelas/delete-flutter/$id/'), // Endpoint perlu disesuaikan di urls.py django nanti
+        apiPath('/bookingkelas/delete-flutter/$id/'),
         {},
       );
 
@@ -52,7 +49,7 @@ class _AdminClassListPageState extends State<AdminClassListPage> {
             backgroundColor: LumeColors.sageGreen,
           ),
         );
-        setState(() {}); // Refresh list
+        setState(() {});
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -82,11 +79,10 @@ class _AdminClassListPageState extends State<AdminClassListPage> {
         backgroundColor: LumeColors.sageGreen,
         child: const Icon(Icons.add, color: Colors.white),
         onPressed: () {
-          // Navigasi ke Form Tambah Kelas
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AdminClassFormPage()),
-          ).then((_) => setState(() {})); // Refresh setelah kembali
+          ).then((_) => setState(() {}));
         },
       ),
       body: FutureBuilder(
@@ -167,7 +163,7 @@ class _AdminClassListPageState extends State<AdminClassListPage> {
           const SizedBox(height: 8),
           _infoRow(Icons.person, session.instructor),
           _infoRow(Icons.access_time, session.time),
-          _infoRow(Icons.event, session.days.join(", ")), // Tampilkan hari
+          _infoRow(Icons.event, session.days.join(", ")), 
           _infoRow(
             Icons.people,
             "${session.capacityCurrent}/${session.capacityMax}",
@@ -182,13 +178,12 @@ class _AdminClassListPageState extends State<AdminClassListPage> {
                 icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
                 label: const Text("Edit", style: TextStyle(color: Colors.blue)),
                 onPressed: () {
-                  // Navigasi ke Form Edit
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => AdminClassFormPage(
                         session: session,
-                      ), // Kirim data session utk diedit
+                      ),
                     ),
                   ).then((_) => setState(() {}));
                 },

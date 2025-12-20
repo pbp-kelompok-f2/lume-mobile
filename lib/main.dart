@@ -5,8 +5,9 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
 import 'package:lume_mobile/main/screens/main_scaffold.dart';
 import 'package:lume_mobile/providers/cart_provider.dart';
-import 'package:lume_mobile/providers/user_provider.dart'; // Import Provider baru
+import 'package:lume_mobile/providers/user_provider.dart';
 
+// tes build bitrise2
 void main() {
   runApp(const MyApp());
 }
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider( // Ganti Provider biasa dengan MultiProvider
+    return MultiProvider(
       providers: [
         Provider(
           create: (_) {

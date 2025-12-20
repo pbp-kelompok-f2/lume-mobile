@@ -16,7 +16,6 @@ class AdminProductListPage extends StatefulWidget {
 
 class _AdminProductListPageState extends State<AdminProductListPage> {
   Future<List<Product>> fetchProducts(CookieRequest request) async {
-    // Menggunakan endpoint yang sama dengan user biasa, tapi admin punya akses penuh
     final response = await request.get(apiPath('/catalog/api/products/?limit=100'));
     
     List<Product> list = [];
@@ -39,7 +38,7 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Product deleted successfully")),
         );
-        setState(() {}); // Refresh UI
+        setState(() {});
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -61,12 +60,11 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: LumeColors.sageGreen,
         onPressed: () async {
-          // Navigasi ke Form tambah (tanpa parameter product)
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AdminProductFormPage()),
           );
-          setState(() {}); // Refresh setelah balik dari form
+          setState(() {});
         },
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -94,11 +92,10 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
                   padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      // Thumbnail kecil
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
-                          product.thumbnail,
+                          product.displayThumbnail,
                           width: 60,
                           height: 60,
                           fit: BoxFit.cover,
@@ -107,7 +104,6 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Info Produk
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,26 +122,23 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
                           ],
                         ),
                       ),
-                      // Tombol Aksi
                       Row(
                         children: [
                           IconButton(
                             icon: const Icon(Icons.edit, color: LumeColors.sageGreen),
                             onPressed: () async {
-                              // Navigasi ke Form Edit (bawa parameter product)
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => AdminProductFormPage(product: product),
                                 ),
                               );
-                              setState(() {}); // Refresh
+                              setState(() {});
                             },
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.redAccent),
                             onPressed: () {
-                              // Dialog konfirmasi
                               showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(

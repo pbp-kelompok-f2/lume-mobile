@@ -25,7 +25,6 @@ class OrderConfirmedDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ✔️ Icon success
             Container(
               width: 90,
               height: 90,
@@ -46,7 +45,6 @@ class OrderConfirmedDialog extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Title
             Text(
               "Order Confirmed!",
               style: GoogleFonts.inter(
@@ -58,7 +56,6 @@ class OrderConfirmedDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Subtitle
             Text(
               "Thank you for your purchase!\nYour order has been placed successfully. "
               "You will receive a confirmation email shortly.",
@@ -72,11 +69,9 @@ class OrderConfirmedDialog extends StatelessWidget {
 
             const SizedBox(height: 28),
 
-            // Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // View Order History
                 ElevatedButton(
                   onPressed: onViewOrderHistory,
                   style: ElevatedButton.styleFrom(
@@ -100,7 +95,6 @@ class OrderConfirmedDialog extends StatelessWidget {
 
                 const SizedBox(width: 12),
 
-                // Back to Home
                 OutlinedButton(
                   onPressed: onBackToHome,
                   style: OutlinedButton.styleFrom(

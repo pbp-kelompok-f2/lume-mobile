@@ -9,7 +9,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
 class AdminClassFormPage extends StatefulWidget {
-  final ClassSession? session; // Null = Add, Not Null = Edit
+  final ClassSession? session;
 
   const AdminClassFormPage({super.key, this.session});
 
@@ -20,7 +20,6 @@ class AdminClassFormPage extends StatefulWidget {
 class _AdminClassFormPageState extends State<AdminClassFormPage> {
   final _formKey = GlobalKey<FormState>();
   
-  // Controllers
   late TextEditingController _titleController;
   late TextEditingController _instructorController;
   late TextEditingController _roomController;
@@ -28,11 +27,9 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
   late TextEditingController _capacityController;
   late TextEditingController _descriptionController;
   
-  // Dropdown Values
   String _selectedCategory = 'daily';
-  String _selectedTime = '10.00 AM - 11.30 AM'; // Default Time Slot
+  String _selectedTime = '10.00 AM - 11.30 AM'; 
 
-  // Data Options (Sesuai Django models.py)
   final List<String> _timeSlots = [
     '10.00 AM - 11.30 AM',
     '12.00 PM - 13.30 PM',
@@ -41,7 +38,6 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
     '18.00 PM - 19.30 PM',
   ];
 
-  // Map Hari: Flutter UI -> Django Value ('mon', 'tue', dst)
   final Map<String, String> _dayMap = {
     'mon': 'Monday',
     'tue': 'Tuesday',
@@ -51,7 +47,7 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
     'sat': 'Saturday',
   };
   
-  final List<String> _selectedDays = []; // Menyimpan kode hari ('mon', 'tue')
+  final List<String> _selectedDays = [];
 
   bool _isLoading = false;
 
@@ -64,19 +60,17 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
     _instructorController = TextEditingController(text: s?.instructor ?? "");
     _roomController = TextEditingController(text: s?.room ?? "");
     _priceController = TextEditingController(text: s != null ? s.price.toString() : "");
-    _capacityController = TextEditingController(text: s != null ? s.capacityMax.toString() : "20"); // Default 20
+    _capacityController = TextEditingController(text: s != null ? s.capacityMax.toString() : "20");
     _descriptionController = TextEditingController(text: s?.description ?? "");
     
     if (s != null) {
       _selectedCategory = s.category.toLowerCase();
-      // Pastikan time ada di list, kalau tidak (misal data lama), masukkan ke list sementara atau set default
       if (_timeSlots.contains(s.time)) {
         _selectedTime = s.time;
       } else {
         _selectedTime = _timeSlots.first; 
       }
       
-      // Load existing days
       _selectedDays.addAll(s.days); 
     }
   }
@@ -84,7 +78,6 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Validasi Khusus: Jika Weekly, harus pilih hari
     if (_selectedCategory == 'weekly' && _selectedDays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please select at least one day for Weekly class."), backgroundColor: Colors.red),
@@ -97,23 +90,21 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
     
     String url;
     if (widget.session == null) {
-      // Create
       url = apiPath('/bookingkelas/create-flutter/');
     } else {
-      // Edit
       url = apiPath('/bookingkelas/edit-flutter/${widget.session!.id}/');
     }
 
     final Map<String, dynamic> body = {
       'title': _titleController.text,
       'instructor': _instructorController.text,
-      'time': _selectedTime, // Pakai dropdown value
+      'time': _selectedTime,
       'room': _roomController.text,
       'price': int.tryParse(_priceController.text) ?? 0,
       'capacity_max': int.tryParse(_capacityController.text) ?? 20,
       'description': _descriptionController.text,
       'category': _selectedCategory,
-      'days': _selectedCategory == 'daily' ? [] : _selectedDays, // Daily dihandle backend, Weekly kirim list
+      'days': _selectedCategory == 'daily' ? [] : _selectedDays,
     };
 
     try {
@@ -130,7 +121,7 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
               backgroundColor: LumeColors.sageGreen,
             ),
           );
-          Navigator.pop(context); // Kembali ke list
+          Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -173,7 +164,6 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
               _buildTextField("Title", _titleController),
               _buildTextField("Instructor", _instructorController),
               
-              // --- CATEGORY DROPDOWN ---
               const SizedBox(height: 16),
               Text("Category", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: LumeColors.darkText)),
               const SizedBox(height: 8),
@@ -184,7 +174,6 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
                 itemLabel: (val) => val == 'daily' ? 'Daily' : 'Weekly',
               ),
 
-              // --- DAYS SELECTION (Only for Weekly) ---
               if (_selectedCategory == 'weekly') ...[
                 const SizedBox(height: 16),
                 Text("Select Days", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: LumeColors.darkText)),
@@ -193,8 +182,8 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: _dayMap.entries.map((entry) {
-                    final dayCode = entry.key; // 'mon', 'tue'
-                    final dayName = entry.value; // 'Monday', 'Tuesday'
+                    final dayCode = entry.key;
+                    final dayName = entry.value;
                     final isSelected = _selectedDays.contains(dayCode);
                     
                     return FilterChip(
@@ -216,7 +205,6 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
                 ),
               ],
 
-              // --- TIME SLOT DROPDOWN ---
               const SizedBox(height: 16),
               Text("Time Slot", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: LumeColors.darkText)),
               const SizedBox(height: 8),
@@ -224,7 +212,7 @@ class _AdminClassFormPageState extends State<AdminClassFormPage> {
                 value: _selectedTime,
                 items: _timeSlots,
                 onChanged: (val) => setState(() => _selectedTime = val!),
-                itemLabel: (val) => val, // Display as is
+                itemLabel: (val) => val,
               ),
 
               _buildTextField("Room", _roomController),

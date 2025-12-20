@@ -20,22 +20,18 @@ class ProductEntryPage extends StatefulWidget {
 }
 
 class _ProductEntryPageState extends State<ProductEntryPage> {
-  // --- ANIMATION KEYS ---
   GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>();
   late Function(GlobalKey) runAddToCartAnimation;
 
-  // --- State Data ---
   List<Product> _displayedProducts = [];
   List<Product> _allCachedProducts = [];
 
-  // --- State Pagination ---
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _offset = 0;
   final int _limit = 6;
 
-  // --- State Filter & Search ---
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _minPriceController = TextEditingController();
@@ -69,7 +65,6 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchPagedProducts(refresh: true);
 
-      // ✅ HANYA FETCH CART COUNT KALAU SUDAH LOGIN
       final req = context.read<CookieRequest>();
       if (req.loggedIn) {
         context.read<CartProvider>().fetchCartCount(req);
@@ -87,7 +82,6 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
     super.dispose();
   }
 
-  // --- FETCH DATA ---
   Future<void> _fetchPagedProducts({bool refresh = false}) async {
     final request = context.read<CookieRequest>();
     if (refresh) {
@@ -376,10 +370,9 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
     );
   }
 
-  // --- BUILD UTAMA ---
   @override
   Widget build(BuildContext context) {
-    final request = context.watch<CookieRequest>(); // 🔎 dipakai untuk cek loggedIn
+    final request = context.watch<CookieRequest>();
 
     return AddToCartAnimation(
       cartKey: cartKey,
@@ -401,7 +394,6 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
         ),
         body: Column(
           children: [
-            // --- Search & Cart ---
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
@@ -446,7 +438,6 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                   ),
                   const SizedBox(width: 12),
 
-                  // --- CART ICON DENGAN BADGE (cek login + counter) ---
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -467,11 +458,10 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                       key: cartKey,
                       badgeOptions: const BadgeOptions(
                         active:
-                            false, // disable bawaan badge dari add_to_cart_animation
+                            false,
                       ),
                       icon: Consumer<CartProvider>(
                         builder: (context, cartProvider, child) {
-                          // Base Cart Icon
                           Widget cartIcon = Container(
                             height: 48,
                             width: 48,
@@ -486,13 +476,11 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
                             ),
                           );
 
-                          // ❗ Kalau belum login ATAU counter 0 → icon polos
                           if (!request.loggedIn ||
                               cartProvider.counter <= 0) {
                             return cartIcon;
                           }
 
-                          // ✅ Login + counter > 0 → badge hijau
                           return Badge(
                             label: Text(
                               "${cartProvider.counter}",
@@ -509,7 +497,6 @@ class _ProductEntryPageState extends State<ProductEntryPage> {
               ),
             ),
 
-            // --- GRID ---
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())

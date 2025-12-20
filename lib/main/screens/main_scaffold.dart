@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:lume_mobile/booking_kelas/screens/class_list_page.dart';
 
 class MainScaffold extends StatefulWidget {
-  // Parameter opsional untuk menentukan tab awal
   final int initialIndex; 
 
   const MainScaffold({super.key, this.initialIndex = 0});
@@ -19,30 +18,25 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  late int _selectedIndex; // Variabel ini perlu diinisialisasi
+  late int _selectedIndex;
 
   @override
   void initState() {
     super.initState();
     
-    // 🔑 FIX UTAMA: Inisialisasi _selectedIndex menggunakan nilai dari widget
     _selectedIndex = widget.initialIndex; 
 
-    // Lanjutkan dengan logika fetch cart yang sudah benar
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchCartOnLoad();
     });
   }
 
   void _fetchCartOnLoad() async {
-    // Gunakan context.read karena kita berada di initState/callback
     final request = context.read<CookieRequest>();
 
-    // Hanya fetch jika sudah login (seharusnya selalu true setelah navigasi dari LoginPage)
     if (request.loggedIn) {
       final cartProvider = context.read<CartProvider>();
       try {
-        // Panggil fetchCart di sini. Cookie sesi sudah pasti siap.
         await cartProvider.fetchCart(request);
         debugPrint("Cart fetched successfully from MainScaffold.");
       } catch (e) {

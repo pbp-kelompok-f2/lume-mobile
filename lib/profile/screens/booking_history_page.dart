@@ -104,7 +104,6 @@ Future<List<BookingHistory>> fetchBookingHistory(CookieRequest request) async {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // === HEADER: Day & Status ===
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -113,7 +112,7 @@ Future<List<BookingHistory>> fetchBookingHistory(CookieRequest request) async {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0EBE0), // Light Sage accent
+                        color: const Color(0xFFF0EBE0),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(Icons.self_improvement, 
@@ -151,7 +150,6 @@ Future<List<BookingHistory>> fetchBookingHistory(CookieRequest request) async {
               child: Divider(height: 1, thickness: 0.5),
             ),
 
-            // === BODY: Class Details ===
             Text(
               booking.className,
               style: GoogleFonts.inter(
@@ -181,7 +179,6 @@ Future<List<BookingHistory>> fetchBookingHistory(CookieRequest request) async {
 
             const SizedBox(height: 16),
 
-            // === FOOTER: Price ===
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

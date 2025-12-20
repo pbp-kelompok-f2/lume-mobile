@@ -26,7 +26,7 @@ class OrderHistory {
   final String date;
   final String status;
   final int totalAmount;
-  final List<ProductItem> items; // Ubah dari List<String> ke List<ProductItem>
+  final List<ProductItem> items;
 
   OrderHistory({
     required this.id,

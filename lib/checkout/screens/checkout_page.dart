@@ -1,5 +1,3 @@
-// lib/checkout/screens/checkout_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -21,7 +19,6 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers form
   final _address1Controller = TextEditingController();
   final _address2Controller = TextEditingController();
   final _cityController = TextEditingController();
@@ -42,7 +39,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   void initState() {
     super.initState();
-    // fetch cart summary setelah widget siap
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadSummary();
     });
@@ -120,13 +116,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
     });
 
     if (result.success) {
-      // Tampilkan dialog sukses
       await showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => OrderConfirmedDialog(
           onBackToHome: () {
-            Navigator.of(context).pop(); // tutup dialog dulu
+            Navigator.of(context).pop();
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -135,12 +130,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
             );
           },
           onViewOrderHistory: () {
-            Navigator.of(context).pop(); // tutup dialog dulu
+            Navigator.of(context).pop();
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => const MainScaffold(
-                  initialIndex: 3, // ⬅️ SESUAIKAN DENGAN TAB PROFILE
+                  initialIndex: 3,
                 ),
               ),
             );
@@ -148,7 +143,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
       );
     } else {
-      // Tampilkan error dari backend
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(result.message)));
@@ -156,7 +150,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   String _formatCurrency(double value) {
-    // simple formatter: Rp 500.000
     final int intValue = value.round();
     final String raw = intValue.toString();
     final buffer = StringBuffer();
@@ -180,7 +173,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Bagian atas: scroll → Shipping & Payment
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
@@ -201,7 +193,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
             ),
 
-            // Bagian bawah: Order Summary (card nempel bawah)
             _buildBottomSummarySection(),
           ],
         ),
@@ -413,7 +404,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
       content = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ====== HEADER ITEM + TOGGLE ======
           InkWell(
             onTap: () {
               setState(() {
@@ -460,7 +450,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
           ),
 
-          // ====== LIST ITEM KALAU SHOW DETAILS ======
           const SizedBox(height: 4),
           AnimatedSize(
             duration: const Duration(milliseconds: 220),
@@ -539,7 +528,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
           const SizedBox(height: 12),
 
-          // ====== SUBTOTAL / SHIPPING / TOTAL ======
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

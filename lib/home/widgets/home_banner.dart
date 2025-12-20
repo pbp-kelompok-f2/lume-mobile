@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeBanner extends StatelessWidget {
-  // Callback function untuk kedua tombol
   final VoidCallback onShopNow; 
-  final VoidCallback onBookClass; // <-- 1. Tambah ini
+  final VoidCallback onBookClass;
 
   const HomeBanner({
     super.key, 
     required this.onShopNow,
-    required this.onBookClass, // <-- 2. Wajib diisi
+    required this.onBookClass,
   });
 
   @override
@@ -54,12 +53,10 @@ class HomeBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 
-                // Buttons Row
                 Row(
                   children: [
-                    // --- BUTTON BOOK CLASS (DI-UPDATE) ---
                     InkWell(
-                      onTap: onBookClass, // <-- 3. Panggil callback saat ditekan
+                      onTap: onBookClass,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         decoration: BoxDecoration(
@@ -74,7 +71,6 @@ class HomeBanner extends StatelessWidget {
                     
                     const SizedBox(width: 12),
                     
-                    // --- BUTTON SHOP PRODUCTS ---
                     InkWell(
                       onTap: onShopNow,
                       child: Container(

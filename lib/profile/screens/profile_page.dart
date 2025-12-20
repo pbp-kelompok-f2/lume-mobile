@@ -7,7 +7,7 @@ import 'package:lume_mobile/profile/screens/booking_history_page.dart';
 import 'package:lume_mobile/profile/screens/edit_profile_page.dart';
 import 'package:lume_mobile/catalog/screens/wishlist_page.dart';
 import 'package:lume_mobile/theme/lume_colors.dart';
-import 'package:lume_mobile/providers/user_provider.dart'; // Import Provider
+import 'package:lume_mobile/providers/user_provider.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
@@ -219,11 +219,9 @@ Widget _buildProfileHeader(BuildContext context, String username, String profile
             child: ClipOval(
               child: profilePicUrl.isNotEmpty
                   ? Image.network(
-                      // Panggil helper function di sini!
                       getProxiedUrl(profilePicUrl),
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        // Jika proxy pun gagal, baru tampilkan icon
                         return const Icon(Icons.person, size: 40, color: Colors.grey);
                       },
                       loadingBuilder: (context, child, loadingProgress) {
@@ -253,7 +251,6 @@ Widget _buildProfileHeader(BuildContext context, String username, String profile
               ),
               const SizedBox(height: 8),
               
-              // Tombol Edit Profile
               Material(
                 color: Colors.transparent,
                 child: InkWell(

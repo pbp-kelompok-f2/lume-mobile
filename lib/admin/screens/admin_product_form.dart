@@ -8,7 +8,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
 class AdminProductFormPage extends StatefulWidget {
-  final Product? product; // Jika null = Mode Add, Jika ada = Mode Edit
+  final Product? product;
 
   const AdminProductFormPage({super.key, this.product});
 
@@ -19,7 +19,6 @@ class AdminProductFormPage extends StatefulWidget {
 class _AdminProductFormPageState extends State<AdminProductFormPage> {
   final _formKey = GlobalKey<FormState>();
   
-  // Controllers
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _priceController = TextEditingController();
@@ -33,7 +32,6 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
   void initState() {
     super.initState();
     if (widget.product != null) {
-      // Isi form jika mode edit
       _nameController.text = widget.product!.name;
       _descController.text = widget.product!.description;
       _priceController.text = widget.product!.price.toString();
@@ -69,83 +67,19 @@ class _AdminProductFormPageState extends State<AdminProductFormPage> {
 
     try {
       if (widget.product == null) {
-        // --- CREATE MODE ---
         final response = await request.postJson(
           apiPath('/catalog/api/products/create/'),
           body,
         );
-        if (response['id'] != null) { // Cek sukses via respon ID
+        if (response['id'] != null) { 
             if(!mounted) return;
-            Navigator.pop(context); // Kembali ke list
+            Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Product created successfully!")),
             );
         }
       } else {
-        // --- EDIT MODE ---
-        // postJson di pbp_django_auth biasanya kirim POST, 
-        // tapi api.py update butuh PUT/PATCH. 
-        // Namun, pbp_django_auth versi baru support method lain via `request.post` atau `request.put`?
-        // Jika library terbatas, kita pakai endpoint khusus atau trik. 
-        // Tapi mari kita coba request.postJson tapi backend kita handle POST juga?
-        // Oh, api.py Anda pakai @require_http_methods(["PUT","PATCH"]).
-        
-        // Kita harus pakai method update manual kalau library pbp tidak support method PUT langsung dengan mudah.
-        // Tapi, asumsi pbp_django_auth standar:
-        
-        // Versi custom request untuk PUT:
-        // (Jika pbp_django_auth tidak punya helper putJson, kita akali dengan kirim request biasa)
-        // Note: Sebagian versi pbp_django_auth hanya support GET/POST. 
-        // Solusi: Ganti view Django jadi @require_http_methods(["POST", "PUT"]) ATAU
-        // gunakan http client bawaan dart dengan headers cookie dari request.
-        
-        // Namun, jika Anda menggunakan library standar UI, kita coba fetch method custom:
-        
-        /* NOTE: Karena API endpoint 'update' di Django Anda strict ["PUT", "PATCH"], 
-           pastikan library Flutter Anda bisa kirim PUT. 
-           Kalau pbp_django_auth versi lama hanya POST, Anda mungkin perlu mengubah Django viewnya
-           menjadi @require_http_methods(["POST"]) sementara, atau pakai kode di bawah ini 
-           jika library mendukung.
-        */
 
-        // Menggunakan request base class untuk PUT (jika didukung)
-        // Atau kita pakai `request.postJson` tapi ubah view Django sedikit.
-        // TAPI, agar aman tanpa ubah Django, kita pakai `request.update` (jika ada) 
-        // atau `http.put` dengan header dari request.headers.
-        
-        // Mari kita asumsikan pbp_django_auth bisa menghandle ini, atau kita pakai workaround:
-        // Menggunakan endpoint create untuk update? Tidak bisa.
-        
-        // Solusi Paling Aman tanpa ubah Django & Library:
-        // Gunakan request provider yang sudah ada
-        
-        // Coba kirim sebagai POST ke endpoint update? 
-        // Django view `api_product_update` di file Anda: @require_http_methods(["PUT","PATCH"]).
-        // Jadi POST akan 405 Method Not Allowed.
-        
-        // *Saran*: Ubah sedikit Django `api.py` untuk `api_product_update` menerima POST juga, 
-        // ATAU gunakan kode di bawah ini yang mencoba melakukan PUT (tergantung implementasi package).
-        
-        // Jika package pbp_django_auth tidak support PUT, 
-        // gunakan perintah ini (perlu import 'package:http/http.dart' as http):
-        /*
-          final url = Uri.parse(apiPath('/catalog/api/products/${widget.product!.id}/update/'));
-          final response = await http.put(
-            url,
-            headers: request.headers..addAll({"Content-Type": "application/json"}),
-            body: body,
-          );
-        */
-        
-        // TAPI, untuk sekarang saya gunakan `request.postJson` dengan asumsi 
-        // Anda akan menambahkan "POST" ke decorator Django view `api_product_update` 
-        // agar lebih mudah di Flutter.
-        // -> @require_http_methods(["PUT", "PATCH", "POST"])
-        
-        // Jika tidak mau ubah Django, gunakan ini (fitur hidden library):
-        // (Tapi saya sarankan tambahkan POST di Django viewnya demi kestabilan).
-        
-        // SEMENTARA SAYA PAKAI POST (Tolong tambahkan "POST" di api_product_update Django Anda)
          final response = await request.postJson(
           apiPath('/catalog/api/products/${widget.product!.id}/update/'),
           body,

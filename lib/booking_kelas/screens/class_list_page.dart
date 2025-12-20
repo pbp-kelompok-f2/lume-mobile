@@ -6,12 +6,11 @@ import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 
-// Model bantuan untuk menampung data sesi yang sudah di-grouping
 class ProcessedSession {
-  final ClassSession session; // Instance representatif (biasanya yang pertama)
+  final ClassSession session;
   final String baseTitle;
-  final Map<String, ClassSession> dailyMap; // Map Nama Hari -> ID Sesi (Untuk Daily)
-  final Set<String> daysNames; // List nama hari untuk ditampilkan (Badge)
+  final Map<String, ClassSession> dailyMap; 
+  final Set<String> daysNames;
 
   ProcessedSession({
     required this.session,
@@ -30,29 +29,23 @@ class ClassListPage extends StatefulWidget {
 
 class _ClassListPageState extends State<ClassListPage> {
   
-  // Helper: Mapping angka string '0'-'6' ke Nama Hari (Sesuai views.py)
   String _getDayName(String dayCode) {
     const map = {
       '0': 'Monday', '1': 'Tuesday', '2': 'Wednesday', 
       '3': 'Thursday', '4': 'Friday', '5': 'Saturday', '6': 'Sunday'
     };
-    // Jika backend kirim 'Monday' langsung, kembalikan 'Monday'. Jika '0', kembalikan 'Monday'.
     return map[dayCode] ?? dayCode; 
   }
 
-  // Helper: Membersihkan judul (Sesuai views.py _base_title)
-  // Misal: "Pilates - Rp50.000" -> "Pilates"
   String _baseTitle(String title) {
     int lastIndex = title.lastIndexOf(' - ');
     if (lastIndex != -1) {
-      // Ambil string dari awal sampai sebelum tanda ' - ' terakhir
       return title.substring(0, lastIndex);
     }
     return title;
   }
 
   Future<List<ProcessedSession>> fetchAndProcessClasses(CookieRequest request) async {
-    // Sesuaikan URL (localhost untuk simulator, 10.0.2.2 untuk emulator Android)
     final response = await request.get(apiPath('/bookingkelas/json/'));
     
     List<ClassSession> allSessions = [];
@@ -62,50 +55,39 @@ class _ClassListPageState extends State<ClassListPage> {
       for (var d in response['sessions']) { if (d != null) allSessions.add(ClassSession.fromJson(d)); }
     }
 
-    // --- LOGIKA GROUPING (MIRIP VIEWS.PY CATALOG) ---
-    // Key Grouping: (Base Title, Time, Category)
+
     Map<String, ProcessedSession> groups = {};
 
     for (var s in allSessions) {
       String base = _baseTitle(s.title);
-      // Buat key unik gabungan
       String groupKey = "${base}_${s.time}_${s.category}";
 
-      // Konversi list days code (["0"]) jadi list nama hari (["Monday"])
       List<String> currentDayNames = s.days.map((d) => _getDayName(d.toString())).toList();
 
       if (!groups.containsKey(groupKey)) {
-        // Inisialisasi Group Baru
         groups[groupKey] = ProcessedSession(
-          session: s, // Simpan instance ini sebagai wakil untuk harga, deskripsi, dll
+          session: s,
           baseTitle: base,
           dailyMap: {},
           daysNames: {},
         );
       }
 
-      // Update Group Data
       final group = groups[groupKey]!;
       
-      // 1. Tambahkan Nama Hari ke Set (agar unik dan terkumpul)
       group.daysNames.addAll(currentDayNames);
 
-      // 2. Jika Daily, mapping Hari -> ID untuk keperluan Modal
       if (s.category.toLowerCase() == 'daily') {
-        // Asumsi Daily per row cuma punya 1 hari, tapi kita loop jg utk aman
         for (var dayName in currentDayNames) {
            group.dailyMap[dayName] = s;
         }
       } else {
-        // Jika Weekly, ID nya pakai instance ini (biasanya weekly 1 row = banyak hari)
-        // Kita bisa pakai ID sesi representative saat booking nanti.
+
       }
     }
 
-    // Konversi ke List dan Sorting
     List<ProcessedSession> result = groups.values.toList();
     
-    // Sort: Category -> Time -> BaseTitle (Sesuai views.py)
     result.sort((a, b) {
       int catCmp = a.session.category.compareTo(b.session.category);
       if (catCmp != 0) return catCmp;
@@ -149,8 +131,8 @@ class _ClassListPageState extends State<ClassListPage> {
                   final item = snapshot.data![index];
                   return ClassCard(
                     session: item.session,
-                    baseTitle: item.baseTitle, // Pass judul bersih
-                    daysNames: item.daysNames.toList()..sort(), // Pass list hari
+                    baseTitle: item.baseTitle, 
+                    daysNames: item.daysNames.toList()..sort(), 
                     dailySessionMap: item.dailyMap,
                     onRefresh: () { setState(() {}); },
                   );

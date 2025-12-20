@@ -41,7 +41,6 @@ class _HomePageState extends State<HomePage> {
     return map[dayCode] ?? dayCode;
   }
 
-  // 1. FETCH FEATURED PRODUCTS
   Future<List<Product>> fetchFeaturedProducts(CookieRequest request) async {
     final response = await request.get(
       apiPath('/catalog/api/products/?limit=5'),
@@ -58,10 +57,9 @@ class _HomePageState extends State<HomePage> {
     return listProduct;
   }
 
-  // ✅ 2. FETCH POPULAR CLASSES (Per Hari Spesifik - Endpoint Baru)
   Future<List<ClassSession>> fetchPopularClasses(CookieRequest request) async {
     final response = await request.get(
-      apiPath('/bookingkelas/api/popular/'), // ✅ Endpoint baru
+      apiPath('/bookingkelas/api/popular/'),
     );
 
     List<ClassSession> allSessions = [];
@@ -77,7 +75,7 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    return allSessions; // ✅ Sudah dibatasi 6 kelas di backend
+    return allSessions;
   }
 
   @override
@@ -105,7 +103,6 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // === HEADER HELLO USER + CART ICON ===
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -131,7 +128,6 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
 
-                      // CART ICON + TARGET ANIMASI
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -192,7 +188,6 @@ class _HomePageState extends State<HomePage> {
 
                   const SizedBox(height: 24),
 
-                  // === HOME BANNER ===
                   HomeBanner(
                     onShopNow: () {
                       widget.onNavigateTo(1);
@@ -204,7 +199,6 @@ class _HomePageState extends State<HomePage> {
 
                   const SizedBox(height: 32),
 
-                  // === FEATURED PRODUCTS SECTION ===
                   GestureDetector(
                     onTap: () {
                       widget.onNavigateTo(1);
@@ -300,7 +294,6 @@ class _HomePageState extends State<HomePage> {
 
                   const SizedBox(height: 40),
 
-                  // === MOST POPULAR CLASSES SECTION ===
                   Center(
                     child: Text(
                       "Most Popular Classes",
@@ -339,25 +332,23 @@ class _HomePageState extends State<HomePage> {
                               itemBuilder: (context, index) {
                                 final session = sessions[index];
 
-                                // ✅ Ambil nama hari dari session
                                 final daysNames = session.days
                                     .map((d) => _getDayName(d))
                                     .toList();
 
-                                // ✅ Map hanya 1 hari (karena popular classes per hari)
                                 Map<String, ClassSession> dailyMap = {}; 
   
                                 if (daysNames.isNotEmpty) {
 
-                                  dailyMap[daysNames.first] = session; // <--- UBAH DI SINI
+                                  dailyMap[daysNames.first] = session;
                                 }
 
                                 return ClassCard(
                                   session: session,
-                                  baseTitle: session.title, // ✅ Tidak perlu _baseTitle
+                                  baseTitle: session.title,
                                   daysNames: daysNames,
                                   dailySessionMap: dailyMap,
-                                  isPopular: true, // ✅ Flag untuk homepage
+                                  isPopular: true, 
                                   onRefresh: () {
                                     setState(() {});
                                   },

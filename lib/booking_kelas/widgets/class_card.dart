@@ -33,7 +33,6 @@ class ClassCard extends StatelessWidget {
     bool isDaily = session.category.toLowerCase() == 'daily';
     bool isWeekly = session.category.toLowerCase() == 'weekly';
 
-    // Warna Card
     const Color cardBg = Color(0xFFE9E3D6);
     const Color borderColor = Color(0xFFCFC8BA);
     const Color textDark = Color(0xFF171717);
@@ -71,7 +70,6 @@ class ClassCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- HEADER ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,7 +131,6 @@ class ClassCard extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // --- GRID INFO ---
             Row(
               children: [
                 Expanded(
@@ -163,7 +160,6 @@ class ClassCard extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // --- DAYS LIST ---
             Text(
               dayLabel,
               style: GoogleFonts.inter(color: labelColor, fontSize: 14),
@@ -178,7 +174,6 @@ class ClassCard extends StatelessWidget {
             ),
 
             const SizedBox(height: 24),
-            // --- BUTTONS ---
             _buildActionButton(context, request, isDaily),
           ],
         ),
@@ -241,21 +236,17 @@ class ClassCard extends StatelessWidget {
 
     bool isFull = session.capacityCurrent >= session.capacityMax;
 
-    // Helper function untuk cek login sebelum aksi
     void checkAuthAndProceed(VoidCallback action) {
       if (!request.loggedIn) {
-        // ✅ Jika belum login, arahkan ke LoginPage
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage(showBack: true,)),
         );
       } else {
-        // ✅ Jika sudah login, jalankan aksi (booking/modal)
         action();
       }
     }
 
-    // LOGIKA POPULAR HOME PAGE (Langsung Book)
     if (isPopular && dailySessionMap.length == 1) {
       return SizedBox(
         width: double.infinity,
@@ -278,7 +269,6 @@ class ClassCard extends StatelessWidget {
       );
     }
 
-    // LOGIKA CATALOG PAGE (Daily -> Modal)
     if (isDaily) {
       return SizedBox(
         width: double.infinity,
@@ -293,7 +283,6 @@ class ClassCard extends StatelessWidget {
         ),
       );
     } else {
-      // WEEKLY
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton(
@@ -315,13 +304,9 @@ class ClassCard extends StatelessWidget {
     }
   }
 
-  // ===========================================================================
-  // ✅ MODAL PEMILIHAN HARI (SORTED SENIN-SABTU & STYLED)
-  // ===========================================================================
   void _showDaySelectionDialogStyled(BuildContext context, CookieRequest request) {
     final sortedDays = dailySessionMap.keys.toList();
     
-    // ✅ Map urutan hari (Support Inggris & Indonesia)
     const dayOrder = {
       'monday': 1, 'senin': 1,
       'tuesday': 2, 'selasa': 2,
@@ -332,7 +317,6 @@ class ClassCard extends StatelessWidget {
       'sunday': 7, 'minggu': 7,
     };
 
-    // Sorting Logic
     sortedDays.sort((a, b) {
       int orderA = dayOrder[a.toLowerCase()] ?? 10;
       int orderB = dayOrder[b.toLowerCase()] ?? 10;
@@ -483,7 +467,7 @@ class ClassCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              dayName, // Nama hari akan tampil di sini
+              dayName, 
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -504,14 +488,12 @@ class ClassCard extends StatelessWidget {
     );
   }
 
-  // ✅ FUNGSI BARU: Direct Booking (Tanpa Modal) -> Langsung ke Checkout
   Future<void> _handleBookingDirectly(
     BuildContext context,
     CookieRequest request,
     int sessionId,
   ) async {
     try {
-      // 1. Kirim Request Booking
       final response = await request.post(
         apiPath("/bookingkelas/book-flutter/"), 
         jsonEncode({"session_id": sessionId}),
@@ -519,22 +501,18 @@ class ClassCard extends StatelessWidget {
 
       if (context.mounted) {
         if (response['status'] == 'success') {
-          // 2. Ambil Booking ID dari response
           final bookingId = response['booking_id'];
           
-          // 3. Langsung Pindah ke Halaman Checkout
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => BookingCheckoutPage(bookingId: bookingId),
             ),
           ).then((_) {
-             // Refresh halaman ketika user kembali dari checkout (baik sudah bayar atau belum)
              onRefresh(); 
           });
 
         } else {
-          // Jika gagal (misal penuh atau sudah book)
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -569,7 +547,6 @@ class ClassCard extends StatelessWidget {
     }
   }
 
-  // --- LOGIC: Kirim Request ke Django (Dari Modal) ---
   Future<void> _handleBooking(
     BuildContext context,
     CookieRequest request,
@@ -584,7 +561,6 @@ class ClassCard extends StatelessWidget {
       if (response['status'] == 'success') {
         final bookingId = response['booking_id'];
 
-        // Navigasi ke Checkout juga untuk yang via Modal
         Navigator.push(
             context,
             MaterialPageRoute(

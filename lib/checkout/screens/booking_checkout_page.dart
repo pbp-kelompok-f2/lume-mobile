@@ -20,20 +20,18 @@ class BookingCheckoutPage extends StatefulWidget {
 
 class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
   bool isLoading = true;
-  bool isProcessing = false; // ✅ Loading state untuk button
+  bool isProcessing = false;
   Map<String, dynamic>? bookingData;
   String? errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // ✅ Pake WidgetsBinding biar bisa akses Provider di initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchDetails();
     });
   }
 
-  // ✅ Helper: Convert day code '0'-'6' ke nama hari
   String _getDayName(String dayCode) {
     const map = {
       '0': 'Monday',
@@ -44,10 +42,9 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
       '5': 'Saturday',
       '6': 'Sunday',
     };
-    return map[dayCode] ?? dayCode; // Fallback ke input asli jika bukan '0'-'6'
+    return map[dayCode] ?? dayCode; 
   }
 
-  // ✅ Helper: Format harga jadi Rp 100.000
   String _formatPrice(dynamic price) {
     String priceStr = price.toString();
     return "Rp ${priceStr.replaceAllMapped(
@@ -56,7 +53,6 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
     )}";
   }
 
-  // Ambil detail harga dari API Django
   Future<void> fetchDetails() async {
     final request = context.read<CookieRequest>();
     try {
@@ -83,9 +79,8 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
     }
   }
 
-  // Proses pembayaran
   Future<void> handlePayment() async {
-    if (isProcessing) return; // ✅ Prevent double tap
+    if (isProcessing) return; 
 
     setState(() => isProcessing = true);
 
@@ -112,7 +107,6 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
             ),
           );
 
-          // ✅ Redirect ke Profile Page (Tab Index 3)
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
@@ -205,7 +199,6 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
   }
 
   Widget _buildCheckoutContent() {
-    // ✅ Convert day code ke nama hari yang readable
     final dayDisplay = _getDayName(bookingData!['day']);
     final priceFormatted = _formatPrice(bookingData!['total_payment']);
 
@@ -213,7 +206,6 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
       padding: const EdgeInsets.all(20.0),
       child: Column(
         children: [
-          // --- SUMMARY CARD ---
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(24),
@@ -296,7 +288,6 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
 
           const SizedBox(height: 20),
 
-          // ✅ Payment Method Info
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -329,7 +320,6 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
 
           const Spacer(),
 
-          // --- PAY BUTTON ---
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
