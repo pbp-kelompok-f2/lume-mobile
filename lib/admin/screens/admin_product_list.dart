@@ -95,7 +95,7 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
-                          product.thumbnail,
+                          product.displayThumbnail,
                           width: 60,
                           height: 60,
                           fit: BoxFit.cover,

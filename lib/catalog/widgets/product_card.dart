@@ -204,9 +204,9 @@ class _AppProductCardState extends State<AppProductCard> {
                         Positioned.fill(
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: widget.product.thumbnail.isNotEmpty
+                            child: widget.product.displayThumbnail.isNotEmpty
                                 ? Image.network(
-                                    widget.product.thumbnail,
+                                    widget.product.displayThumbnail,
                                     fit: BoxFit.cover,
                                     width: double.infinity,
                                     height: double.infinity,

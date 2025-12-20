@@ -224,7 +224,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             child: Container(
                               key: imageKey,
                               child: Image.network(
-                                widget.product.thumbnail,
+                                widget.product.displayThumbnail,
                                 fit: BoxFit.cover,
                                 errorBuilder: (ctx, error, stackTrace) => const Center(
                                   child: Icon(Icons.broken_image, size: 64, color: Colors.grey),
