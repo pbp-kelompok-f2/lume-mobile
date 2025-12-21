@@ -2,7 +2,7 @@
 
 [![Build Status](https://app.bitrise.io/app/1e46c592-486b-4c10-a6bb-628e70eec4c8/status.svg?token=ZsOjDa31t4uC2u3S1Dha2g&branch=master)](https://app.bitrise.io/app/1e46c592-486b-4c10-a6bb-628e70eec4c8)
 
-Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/1e46c592-486b-4c10-a6bb-628e70eec4c8/installable-artifacts/e97f1d2393dd7a12/public-install-page/fe500134fc548ae5aeddb13dd71f97b9)
+Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/1e46c592-486b-4c10-a6bb-628e70eec4c8/installable-artifacts/430cb67ba4475870/public-install-page/c2f2a91f91069a2c2f0b3b32d88d1e3c)
 
 Tugas Kelompok PBP F - F02
 - Naomyscha Attalie Maza
