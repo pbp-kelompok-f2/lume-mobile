@@ -42,15 +42,12 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
       '5': 'Saturday',
       '6': 'Sunday',
     };
-    return map[dayCode] ?? dayCode; 
+    return map[dayCode] ?? dayCode;
   }
 
   String _formatPrice(dynamic price) {
     String priceStr = price.toString();
-    return "Rp ${priceStr.replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), 
-      (Match m) => '${m[1]}.',
-    )}";
+    return "Rp ${priceStr.replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
   }
 
   Future<void> fetchDetails() async {
@@ -67,7 +64,8 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
         });
       } else {
         setState(() {
-          errorMessage = response['message'] ?? 'Failed to load booking details';
+          errorMessage =
+              response['message'] ?? 'Failed to load booking details';
           isLoading = false;
         });
       }
@@ -80,7 +78,7 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
   }
 
   Future<void> handlePayment() async {
-    if (isProcessing) return; 
+    if (isProcessing) return;
 
     setState(() => isProcessing = true);
 
@@ -145,8 +143,8 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage != null
-              ? _buildErrorState()
-              : _buildCheckoutContent(),
+          ? _buildErrorState()
+          : _buildCheckoutContent(),
     );
   }
 
@@ -157,19 +155,12 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red[300],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
             const SizedBox(height: 16),
             Text(
               errorMessage!,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: Colors.grey[700],
-              ),
+              style: GoogleFonts.inter(fontSize: 16, color: Colors.grey[700]),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -226,18 +217,6 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
               children: [
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1ECE2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.fitness_center,
-                        color: Color(0xFF6E7D6B),
-                        size: 24,
-                      ),
-                    ),
                     const SizedBox(width: 12),
                     Text(
                       "Order Summary",
@@ -249,20 +228,21 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 _infoRow("Class", bookingData!['title']),
                 _infoRow("Instructor", bookingData!['instructor']),
                 _infoRow("Schedule", "$dayDisplay, ${bookingData!['time']}"),
-                
+
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Divider(color: Color(0xFFE5E0D8)),
                 ),
-                
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
                       "Total Payment",
@@ -271,6 +251,9 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF2C3028),
                       ),
+                    ),
+                    const SizedBox(
+                      height: 4,
                     ),
                     Text(
                       priceFormatted,
@@ -379,10 +362,7 @@ class _BookingCheckoutPageState extends State<BookingCheckoutPage> {
             width: 100,
             child: Text(
               label,
-              style: GoogleFonts.inter(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: GoogleFonts.inter(color: Colors.grey[600], fontSize: 14),
             ),
           ),
           const SizedBox(width: 16),

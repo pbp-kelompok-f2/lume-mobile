@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/widgets/lume_app_bar.dart';
-
+import 'package:lume_mobile/profile/screens/purchase_history_page.dart';
 import '../../models/checkout.dart';
 import '../checkout_service.dart';
 import '../widgets/order_confirmed_dialog.dart';
@@ -131,13 +131,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
           },
           onViewOrderHistory: () {
             Navigator.of(context).pop();
-            Navigator.pushReplacement(
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
-                builder: (context) => const MainScaffold(
-                  initialIndex: 3,
-                ),
-              ),
+                builder: (context) => const PurchaseHistoryPage()
+              ), (route) => route.isFirst,
             );
           },
         ),

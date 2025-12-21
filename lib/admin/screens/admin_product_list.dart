@@ -54,7 +54,7 @@ class _AdminProductListPageState extends State<AdminProductListPage> {
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
       appBar: const LumeAppBar(
-        title: "Kelola Produk",
+        title: "Manage Products",
         showBack: false,
       ),
       floatingActionButton: FloatingActionButton(

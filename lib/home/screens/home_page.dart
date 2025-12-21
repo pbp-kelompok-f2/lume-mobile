@@ -317,7 +317,7 @@ class _HomePageState extends State<HomePage> {
                       } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                         return const Center(
                           child: Text(
-                            "Belum ada jadwal kelas tersedia.",
+                            "No available class schedules.",
                             style: TextStyle(color: Colors.grey),
                           ),
                         );

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lume_mobile/auth/screens/login_page.dart'; 
+import 'package:lume_mobile/auth/screens/login_page.dart';
 import 'package:lume_mobile/models/booking_kelas.dart';
 import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
@@ -58,11 +58,7 @@ class ClassCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
       child: Padding(
@@ -91,7 +87,10 @@ class ClassCard extends StatelessWidget {
                       Text.rich(
                         TextSpan(
                           text: "By ",
-                          style: GoogleFonts.inter(fontSize: 14, color: textGray),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: textGray,
+                          ),
                           children: [
                             TextSpan(
                               text: session.instructor,
@@ -240,7 +239,9 @@ class ClassCard extends StatelessWidget {
       if (!request.loggedIn) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const LoginPage(showBack: true,)),
+          MaterialPageRoute(
+            builder: (context) => const LoginPage(showBack: true),
+          ),
         );
       } else {
         action();
@@ -304,17 +305,27 @@ class ClassCard extends StatelessWidget {
     }
   }
 
-  void _showDaySelectionDialogStyled(BuildContext context, CookieRequest request) {
+  void _showDaySelectionDialogStyled(
+    BuildContext context,
+    CookieRequest request,
+  ) {
     final sortedDays = dailySessionMap.keys.toList();
-    
+
     const dayOrder = {
-      'monday': 1, 'senin': 1,
-      'tuesday': 2, 'selasa': 2,
-      'wednesday': 3, 'rabu': 3,
-      'thursday': 4, 'kamis': 4,
-      'friday': 5, 'jumat': 5,
-      'saturday': 6, 'sabtu': 6,
-      'sunday': 7, 'minggu': 7,
+      'monday': 1,
+      'senin': 1,
+      'tuesday': 2,
+      'selasa': 2,
+      'wednesday': 3,
+      'rabu': 3,
+      'thursday': 4,
+      'kamis': 4,
+      'friday': 5,
+      'jumat': 5,
+      'saturday': 6,
+      'sabtu': 6,
+      'sunday': 7,
+      'minggu': 7,
     };
 
     sortedDays.sort((a, b) {
@@ -324,6 +335,7 @@ class ClassCard extends StatelessWidget {
     });
 
     ClassSession? selectedSession;
+    bool isBooking = false;
 
     showDialog(
       context: context,
@@ -331,12 +343,14 @@ class ClassCard extends StatelessWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.0)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18.0),
+              ),
               elevation: 5,
               backgroundColor: Colors.transparent,
               child: Container(
                 padding: const EdgeInsets.all(24),
-                 decoration: BoxDecoration(
+                decoration: BoxDecoration(
                   color: const Color(0xFFFBF7F5),
                   borderRadius: BorderRadius.circular(18.0),
                   border: Border.all(color: const Color(0xFFE5E0D8)),
@@ -348,7 +362,7 @@ class ClassCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                         Text(
+                        Text(
                           "Select Day",
                           style: GoogleFonts.inter(
                             fontSize: 22,
@@ -372,7 +386,9 @@ class ClassCard extends StatelessWidget {
                           children: sortedDays.map((dayName) {
                             final sessionForDay = dailySessionMap[dayName]!;
                             final isSelected = selectedSession == sessionForDay;
-                            final isFull = sessionForDay.capacityCurrent >= sessionForDay.capacityMax;
+                            final isFull =
+                                sessionForDay.capacityCurrent >=
+                                sessionForDay.capacityMax;
 
                             return _buildDayOptionCard(
                               dayName: dayName,
@@ -397,11 +413,20 @@ class ClassCard extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: selectedSession == null
+                        onPressed: (selectedSession == null || isBooking)
                             ? null
-                            : () {
-                                Navigator.pop(context);
-                                _handleBooking(context, request, selectedSession!.id);
+                            : () async {
+                                setState(() => isBooking = true);
+
+                                await _handleBooking(
+                                  context,
+                                  request,
+                                  selectedSession!.id,
+                                );
+
+                                if (context.mounted) {
+                                  setState(() => isBooking = false);
+                                }
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6E7D6B),
@@ -415,9 +440,20 @@ class ClassCard extends StatelessWidget {
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
-                          disabledBackgroundColor: const Color(0xFFA7B29C).withOpacity(0.5),
+                          disabledBackgroundColor: const Color(
+                            0xFFA7B29C,
+                          ).withOpacity(0.5),
                         ),
-                        child: const Text("Confirm Booking"),
+                        child: isBooking
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text("Confirm Booking"),
                       ),
                     ),
                   ],
@@ -455,19 +491,21 @@ class ClassCard extends StatelessWidget {
             color: isSelected ? selectedBorder : defaultBorder,
             width: isSelected ? 2.0 : 1.0,
           ),
-          boxShadow: isSelected ? [
-             BoxShadow(
-              color: selectedBorder.withOpacity(0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            )
-          ] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: selectedBorder.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              dayName, 
+              dayName,
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -475,7 +513,9 @@ class ClassCard extends StatelessWidget {
               ),
             ),
             Text(
-              isFull ? "Full" : "${session.capacityCurrent}/${session.capacityMax}",
+              isFull
+                  ? "Full"
+                  : "${session.capacityCurrent}/${session.capacityMax}",
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -495,23 +535,22 @@ class ClassCard extends StatelessWidget {
   ) async {
     try {
       final response = await request.post(
-        apiPath("/bookingkelas/book-flutter/"), 
+        apiPath("/bookingkelas/book-flutter/"),
         jsonEncode({"session_id": sessionId}),
       );
 
       if (context.mounted) {
         if (response['status'] == 'success') {
           final bookingId = response['booking_id'];
-          
+
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => BookingCheckoutPage(bookingId: bookingId),
             ),
           ).then((_) {
-             onRefresh(); 
+            onRefresh();
           });
-
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -532,16 +571,16 @@ class ClassCard extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                'Error: $e',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-              ),
-              backgroundColor: const Color(0xFF6E7D6B),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+            content: Text(
+              'Error: $e',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
             ),
+            backgroundColor: const Color(0xFF6E7D6B),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         );
       }
     }
@@ -562,25 +601,24 @@ class ClassCard extends StatelessWidget {
         final bookingId = response['booking_id'];
 
         Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BookingCheckoutPage(bookingId: bookingId),
-            ),
-          ).then((_) => onRefresh());
-
+          context,
+          MaterialPageRoute(
+            builder: (context) => BookingCheckoutPage(bookingId: bookingId),
+          ),
+        ).then((_) => onRefresh());
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                response['message'] ?? 'Booking failed',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-              ),
-              backgroundColor: const Color(0xFF6E7D6B),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+            content: Text(
+              response['message'] ?? 'Booking failed',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
             ),
+            backgroundColor: const Color(0xFF6E7D6B),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         );
       }
     }

@@ -60,7 +60,7 @@ Future<void> _fetchUserData() async {
     final request = context.watch<CookieRequest>();
     final userProvider = context.watch<UserProvider>(); 
 
-    if (!request.loggedIn) {
+    if (!request.loggedIn || userProvider.username == "Guest") {
       return const LoginPage();
     }
 

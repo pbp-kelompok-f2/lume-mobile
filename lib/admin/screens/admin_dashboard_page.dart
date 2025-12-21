@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import 'package:lume_mobile/admin/screens/admin_user_list.dart';
 import 'package:lume_mobile/admin/screens/admin_order_list.dart';
 import 'package:lume_mobile/admin/screens/admin_class_list_page.dart';
+import 'package:lume_mobile/admin/screens/admin_booking_list.dart';
+import 'package:lume_mobile/providers/user_provider.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -50,10 +52,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
     return Scaffold(
       backgroundColor: LumeColors.creamBackground,
-      appBar: const LumeAppBar(
-        title: "Admin Dashboard",
-        showBack: false,
-      ),
+      appBar: const LumeAppBar(title: "Admin Dashboard", showBack: false),
       body: FutureBuilder<AdminStats?>(
         future: fetchAdminStats(request),
         builder: (context, snapshot) {
@@ -164,7 +163,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const AdminClassListPage(),
+                            builder: (context) => const AdminBookingListPage(),
                           ),
                         );
                       },
@@ -183,11 +182,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
                           if (response['ok'] == true) {
                             if (context.mounted) {
+
+                              context.read<UserProvider>().setUsername("Guest");
+
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text("Successfully logged out!"),
                                 ),
                               );
+
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -284,22 +287,27 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildMenuButton(BuildContext context, String title, IconData icon, VoidCallback onTap) {
+  Widget _buildMenuButton(
+    BuildContext context,
+    String title,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05), 
-            blurRadius: 5, 
-            offset: const Offset(0, 2)
-          )
+            color: Colors.grey.withOpacity(0.05),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Material(
-        color: const Color.fromARGB(255, 237, 233, 222), 
-        borderRadius: BorderRadius.circular(16), 
-        child: InkWell( 
+        color: const Color.fromARGB(255, 237, 233, 222),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
@@ -319,13 +327,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   child: Text(
                     title,
                     style: GoogleFonts.inter(
-                      fontSize: 16, 
-                      fontWeight: FontWeight.w600, 
-                      color: LumeColors.darkText
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: LumeColors.darkText,
                     ),
                   ),
                 ),
-                const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.grey,
+                ),
               ],
             ),
           ),

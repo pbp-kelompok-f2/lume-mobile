@@ -7,6 +7,8 @@ import 'package:lume_mobile/providers/cart_provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:lume_mobile/booking_kelas/screens/class_list_page.dart';
+import 'package:lume_mobile/providers/user_provider.dart';
+import 'package:lume_mobile/config/api_config.dart';
 
 class MainScaffold extends StatefulWidget {
   final int initialIndex; 
@@ -31,19 +33,31 @@ class _MainScaffoldState extends State<MainScaffold> {
     });
   }
 
-  void _fetchCartOnLoad() async {
-    final request = context.read<CookieRequest>();
+void _fetchCartOnLoad() async {
+  final request = context.read<CookieRequest>();
+  final userProvider = context.read<UserProvider>();
 
-    if (request.loggedIn) {
-      final cartProvider = context.read<CartProvider>();
-      try {
-        await cartProvider.fetchCart(request);
-        debugPrint("Cart fetched successfully from MainScaffold.");
-      } catch (e) {
-        debugPrint("Error fetching cart on load: $e");
+  if (request.loggedIn) {
+    try {
+      final response = await request.get(apiPath("/user/api/profile/"));
+      
+      if (response['ok'] == true) {
+        final userData = response['user'];
+        userProvider.setUsername(
+          userData['username'],
+          isAdmin: userData['is_staff'] ?? false,
+          profilePicture: userData['profile_picture'] ?? "",
+        );
       }
+      
+      final cartProvider = context.read<CartProvider>();
+      await cartProvider.fetchCart(request);
+      
+    } catch (e) {
+      debugPrint("Failed to synchronize data: $e");
     }
   }
+}
 
   void _onItemTapped(int index) {
     setState(() {
