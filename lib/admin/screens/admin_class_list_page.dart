@@ -7,6 +7,7 @@ import 'package:lume_mobile/widgets/lume_app_bar.dart';
 import 'package:lume_mobile/config/api_config.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
 
 class AdminClassListPage extends StatefulWidget {
   const AdminClassListPage({super.key});
@@ -39,7 +40,7 @@ class _AdminClassListPageState extends State<AdminClassListPage> {
     try {
       final response = await request.postJson(
         apiPath('/bookingkelas/delete-flutter/$id/'),
-        {},
+        jsonEncode({}),
       );
 
       if (response['status'] == 'success') {
